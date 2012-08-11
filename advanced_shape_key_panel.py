@@ -681,6 +681,16 @@ class ShapeKeyMoveInLabel(bpy.types.Operator):
 				obj.active_shape_key_index = new_key_index
 		return {'FINISHED'}
 
+class MESH_MT_shape_key_view_mode(Menu):
+	bl_label = "View Mode"
+
+	def draw(self, context):
+		layout = self.layout
+		obj = context.object
+		for item in bpy.types.Scene.shape_keys_view_mode[1]['items']:
+			if item[0] != context.scene.shape_keys_view_mode:
+				layout.prop_enum(context.scene, "shape_keys_view_mode", item[0])
+
 class MESH_MT_shape_key_copy_to_label(Menu):
 	bl_label = "Copy Shape Key to Label"
 
@@ -691,7 +701,7 @@ class MESH_MT_shape_key_copy_to_label(Menu):
 			if x > 0:
 				layout.operator("object.shape_key_copy_to_label", icon='FILE_FOLDER', text = label.name).index = x
 
-				
+	
 '''----------------------------------------------------------------------------
                             Shape Key Panel
 ----------------------------------------------------------------------------'''
@@ -712,14 +722,9 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		ob = context.object
 		key = ob.data.shape_keys
 		kb = ob.active_shape_key
-
-		enable_edit = ob.mode != 'EDIT'
-		enable_edit_value = False
-
-		if ob.show_only_shape_key is False:
-			if enable_edit or (ob.type == 'MESH' and ob.use_shape_key_edit_mode):
-				enable_edit_value = True
 	
+		##########################
+		# LABELS LIST
 		layout.label("Labels")
 		row = layout.row()
 		row.template_list(ob.data, "shape_key_labels", ob, "active_shape_key_label_index", rows = 4) #
@@ -735,7 +740,8 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			row.prop(labels[ob.active_shape_key_label_index], 'name')
 
 		
-		
+		##########################
+		# SIDE COLUMN ICONS
 		row = layout.row()
 		box = row.box()
 		col = row.column()
@@ -746,6 +752,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		sub.operator("object.shape_key_delete", icon = 'PANEL_CLOSE', text = "")
 		
 		indexes = get_visible_indexes(ob)
+		
 		selected = get_visible_selected(ob)
 		if indexes:
 			sub.operator("object.shape_key_toggle", icon = 'RESTRICT_VIEW_OFF', text = '')
@@ -756,19 +763,37 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		
 		sub.menu("MESH_MT_shape_key_specials", icon = 'DOWNARROW_HLT', text = "")
 		
-		
-		
-		
 		if indexes:
 			row = box.row()
+			
+			##########################
+			# SHAPE KEY VIEW MODE / COPY TO
+			if ob.data.shape_key_labels and ob.active_shape_key_label_index == 0:	
+				# Display view mode menu if "ALL" label is selected
+				menu_name = next(item[1] for item in bpy.types.Scene.shape_keys_view_mode[1]['items'] if context.scene.shape_keys_view_mode == item[0])
+				row.menu("MESH_MT_shape_key_view_mode", text = menu_name)
+				row = row.split()
+				
+				# Filter "ALL" label by view mode
+				if context.scene.shape_keys_view_mode == 'SELECTED':
+					indexes = selected
+
+				elif context.scene.shape_keys_view_mode == 'UNLABELED':
+					indexes_set = set(indexes)
+					for label in labels:
+						for label_indexes in label.indexes:
+							if label_indexes.index in indexes_set:
+								indexes_set.remove(label_indexes.index)
+					indexes = [i for i in indexes if i in indexes_set]
+					
 			row.label("Shape Keys")
 			
 			if ob.data.shape_key_labels and len(ob.data.shape_key_labels) > 1:	
-				# row = box.row(align = True)
 				row = row.split()
-				# row.alignment = 'CENTER'
 				row.menu("MESH_MT_shape_key_copy_to_label", text = "Copy to Label")
-
+			
+			##########################
+			# SHAPE KEYS
 			for i in indexes:
 				row = box.row(align = True)
 				row.scale_y = 0.8
@@ -785,6 +810,9 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 				row.prop(ob.data.shape_keys.key_blocks[i], 'value', text = '')
 				row = row.split()
 				row.prop(ob.data.shape_keys.key_blocks[i], 'mute', text = '')
+			
+			##########################
+			# SIDE COLUMN BOTTOM ICONS
 			
 			# A trip to photoshop gave me this.
 			# However, this may break cross platform due to differences in icon size
@@ -804,8 +832,17 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			sub.operator("object.shape_key_move_in_label", icon = 'TRIA_DOWN', text = "").type = 'DOWN'
 			
 			
-			######
-			# The rest of the interface.
+			##########################
+			# THE REST OF THE DEFAULT INTERFACE
+			# (Minus the name field, which I removed)
+			
+			enable_edit = ob.mode != 'EDIT'
+			enable_edit_value = False
+
+			if ob.show_only_shape_key is False:
+				if enable_edit or (ob.type == 'MESH' and ob.use_shape_key_edit_mode):
+					enable_edit_value = True
+			
 			split = layout.split() #percentage = 0.3)
 			row = split.row()
 			row.enabled = enable_edit
@@ -863,7 +900,7 @@ class IndexProperty(bpy.types.PropertyGroup):
 class IndexCollection(bpy.types.PropertyGroup):
 	indexes = bpy.props.CollectionProperty(type = IndexProperty)
 	#name = bpy.props.StringProperty(name = "Label Name", default = "Default")
-
+	
 old_shape_key_menu = None
 def register():
 	# Register collections
@@ -883,14 +920,24 @@ def register():
 	# So I could override those with mine, and not risk my label state machine
 	# becoming invalid if some other script/user calls object.shape_key_move
 	# instead of object.shape_key_move_to_label
+	
+	bpy.types.Scene.shape_keys_view_mode = bpy.props.EnumProperty(
+		name="View",
+		items =	(('ALL', "All", "View All Shape Keys"),
+				('UNLABELED', "Unlabeled", "View Unlabeled Shape Keys"),
+				('SELECTED', "Selected", "View Selected Shape Keys"),
+				),
+		)
+	
 	bpy.utils.register_module(__name__)
 
 def unregister():
-	bpy.utils.unregister_module(__name__)
 	bpy.utils.unregister_class(IndexProperty)
 	bpy.utils.unregister_class(IndexCollection)
+	bpy.utils.unregister_module(__name__)
 	bpy.utils.register_class(old_shape_key_menu)
-
+	
+	del bpy.types.Scene.shape_keys_view_mode
 	# Should I delete the rna types created?  Hmmmm.  
 	# I don't want a user to lose data from reloading my addon,
 	# but I also don't want extra data saved if it's permanently disabled.
