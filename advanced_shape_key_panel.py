@@ -126,11 +126,58 @@ def shape_key_copy():
 	
 	return shape_keys[new_index], name
 
+class ShapeKeyCreateCorrective(bpy.types.Operator):
+	bl_idname = "object.shape_key_create_corrective"
+	bl_label = "Create Corrective Driver"
+	bl_description = "Create Corrective Driver from Selection"
+	bl_options = {'REGISTER', 'UNDO'}
+	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+	
+	@classmethod
+	def poll(cls, context):
+		engine = context.scene.render.engine
+		obj = context.object
+		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and 
+			(engine in cls.COMPAT_ENGINES) and obj.data.shape_keys)
+	
+	def execute(self, context):
+		# Gather data
+		obj = bpy.context.active_object
+		mesh = obj.data
+		active = obj.active_shape_key_index
+		sel = get_visible_selected(obj)
+		sel.sort()
+		if active not in sel:
+			active = sel.pop(-1)
+		else:
+			sel.remove(active)
+		keys = mesh.shape_keys
+		driver_path = 'key_blocks["%s"].value' % keys.key_blocks[active].name
+		
+		# Create Driver
+		keys.driver_remove(driver_path)
+		fcurve = keys.driver_add(driver_path)
+		
+		# Setup Driver
+		drv = fcurve.driver
+		drv.type = 'MIN'
+		
+		for i in sel:
+			var = drv.variables.new()
+			var.name = keys.key_blocks[i].name
+			var.targets[0].id_type = 'MESH'
+			var.targets[0].id = mesh
+			var.targets[0].data_path = 'shape_keys.key_blocks["%s"].value' % var.name
+			
+		return{'FINISHED'} 
+
+
 class ShapeKeyAxis(bpy.types.Operator):
 	bl_idname = "object.shape_key_axis"
 	bl_label = "Limit Axis"
 	bl_description = "Adjust Shape Key Movement by Axis"
 	bl_options = {'REGISTER', 'UNDO'}
+	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	deform_axis = bpy.types.Scene.shape_key_axis_deform = bpy.props.FloatVectorProperty(
 		name = "Deform Axis", 
@@ -145,8 +192,10 @@ class ShapeKeyAxis(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context):
-		obj = context.active_object
-		return (obj and obj.mode != 'MESH' and obj.type == 'MESH') # and len(obj.vertex_groups) > 0)
+		engine = context.scene.render.engine
+		obj = context.object
+		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and 
+			(engine in cls.COMPAT_ENGINES) and obj.data.shape_keys)
 	
 	def execute(self, context):
 		obj = bpy.context.active_object
@@ -893,6 +942,11 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		else:
 			row = box.row(align = True)
 
+def shape_key_specials(self, context):
+	self.layout.operator("object.shape_key_create_corrective", 
+		text = "Create Corrective Driver", 
+		icon = 'LINK_AREA')
+
 # Define Shape Key Label collection to be put on mesh object.
 class IndexProperty(bpy.types.PropertyGroup):
 	index = bpy.props.IntProperty( default = -1)
@@ -929,6 +983,8 @@ def register():
 				),
 		)
 	
+	bpy.types.MESH_MT_shape_key_specials.append(shape_key_specials)
+
 	bpy.utils.register_module(__name__)
 
 def unregister():
@@ -936,6 +992,7 @@ def unregister():
 	bpy.utils.unregister_class(IndexCollection)
 	bpy.utils.unregister_module(__name__)
 	bpy.utils.register_class(old_shape_key_menu)
+	bpy.types.MESH_MT_shape_key_specials.remove(shape_key_specials)
 	
 	del bpy.types.Scene.shape_keys_view_mode
 	# Should I delete the rna types created?  Hmmmm.  
