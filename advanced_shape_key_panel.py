@@ -737,6 +737,9 @@ class MESH_MT_shape_key_view_mode(Menu):
 		layout = self.layout
 		obj = context.object
 		for item in bpy.types.Scene.shape_keys_view_mode[1]['items']:
+			if item[0] == 'UNLABELED' and obj.data.shape_key_labels and obj.active_shape_key_label_index != 0:
+					continue
+				
 			if item[0] != context.scene.shape_keys_view_mode:
 				layout.prop_enum(context.scene, "shape_keys_view_mode", item[0])
 
@@ -817,23 +820,26 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			
 			##########################
 			# SHAPE KEY VIEW MODE / COPY TO
-			if ob.data.shape_key_labels and ob.active_shape_key_label_index == 0:	
-				# Display view mode menu if "ALL" label is selected
-				menu_name = next(item[1] for item in bpy.types.Scene.shape_keys_view_mode[1]['items'] if context.scene.shape_keys_view_mode == item[0])
-				row.menu("MESH_MT_shape_key_view_mode", text = menu_name)
-				row = row.split()
-				
-				# Filter "ALL" label by view mode
-				if context.scene.shape_keys_view_mode == 'SELECTED':
-					indexes = selected
-
-				elif context.scene.shape_keys_view_mode == 'UNLABELED':
-					indexes_set = set(indexes)
-					for label in labels:
-						for label_indexes in label.indexes:
-							if label_indexes.index in indexes_set:
-								indexes_set.remove(label_indexes.index)
-					indexes = [i for i in indexes if i in indexes_set]
+			# if ob.data.shape_key_labels and ob.active_shape_key_label_index == 0:
+			# Display view mode menu if "ALL" label is selected
+			menu_name = next(item[1] for item in bpy.types.Scene.shape_keys_view_mode[1]['items'] if context.scene.shape_keys_view_mode == item[0])
+			row.menu("MESH_MT_shape_key_view_mode", text = menu_name)
+			row = row.split()
+			
+			# Filter "ALL" label by view mode
+			if context.scene.shape_keys_view_mode == 'SELECTED':
+				indexes = selected
+			
+			if context.scene.shape_keys_view_mode == 'VISIBLE':
+				indexes = [i for i in indexes if not key.key_blocks[i].mute]
+			
+			elif context.scene.shape_keys_view_mode == 'UNLABELED':
+				indexes_set = set(indexes)
+				for label in labels:
+					for label_indexes in label.indexes:
+						if label_indexes.index in indexes_set:
+							indexes_set.remove(label_indexes.index)
+				indexes = [i for i in indexes if i in indexes_set]
 					
 			row.label("Shape Keys")
 			
@@ -980,6 +986,7 @@ def register():
 		items =	(('ALL', "All", "View All Shape Keys"),
 				('UNLABELED', "Unlabeled", "View Unlabeled Shape Keys"),
 				('SELECTED', "Selected", "View Selected Shape Keys"),
+				('VISIBLE', "Visible", "View Visible Shape Keys"),
 				),
 		)
 	
