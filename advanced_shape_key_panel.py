@@ -32,6 +32,18 @@ class MeshButtonsPanel():
                             Label Helpers
 ----------------------------------------------------------------------------'''
 
+def label_poll(context, test_shapes = False):
+	# Simple function for most the poll methods in this module
+	obj = context.object
+	if not (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and \
+		(context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'})):
+		return False
+	
+	if test_shapes:
+		return obj.data.shape_keys
+	
+	return True
+	
 def strip_label_number(label):
 	# Remove numbers from label name and return it
 	name = label.name
@@ -152,18 +164,15 @@ class ShapeKeyCreateCorrective(bpy.types.Operator):
 	bl_label = "Create Corrective Driver"
 	bl_description = "Create Corrective Driver from Selection"
 	bl_options = {'REGISTER', 'UNDO'}
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
 		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and 
-			(engine in cls.COMPAT_ENGINES) and obj.data.shape_keys)
+		return label_poll(context, test_shapes = True)
 	
 	def execute(self, context):
 		# Gather data
-		obj = bpy.context.active_object
+		obj = context.active_object
 		mesh = obj.data
 		active = obj.active_shape_key_index
 		sel = get_visible_indexes(obj, context)[1]
@@ -198,7 +207,6 @@ class ShapeKeyAxis(bpy.types.Operator):
 	bl_label = "Limit Axis"
 	bl_description = "Adjust Shape Key Movement by Axis"
 	bl_options = {'REGISTER', 'UNDO'}
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	deform_axis = bpy.types.Scene.shape_key_axis_deform = bpy.props.FloatVectorProperty(
 		name = "Deform Axis", 
@@ -213,13 +221,10 @@ class ShapeKeyAxis(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
-		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and 
-			(engine in cls.COMPAT_ENGINES) and obj.data.shape_keys)
+		return label_poll(context, test_shapes = True)
 	
 	def execute(self, context):
-		obj = bpy.context.active_object
+		obj = context.active_object
 		shape_keys = obj.data.shape_keys.key_blocks
 		
 		# Initialize.  Isn't there a function for this?  Maybe that's only for modal operators.
@@ -250,17 +255,13 @@ class ToggleShapeKey(bpy.types.Operator):
 	bl_label = "Toggle Visible"
 	bl_options = {'REGISTER', 'UNDO'}
 	bl_description = "Toggle Visible with Selected"
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
-		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and 
-			(engine in cls.COMPAT_ENGINES) and obj.data.shape_keys)
+		return label_poll(context, test_shapes = True)
 	
 	def execute(self, context):
-		obj = bpy.context.active_object
+		obj = context.active_object
 		active_index = obj.active_shape_key_index
 		sel = get_visible_indexes(obj, context)[1]
 		shape_keys = obj.data.shape_keys.key_blocks
@@ -287,17 +288,13 @@ class NegateShapeKey(bpy.types.Operator):
 	bl_label = "Negate"
 	bl_description = "Negate Weight"
 	bl_options = {'REGISTER', 'UNDO'}
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
-		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and 
-			(engine in cls.COMPAT_ENGINES) and obj.data.shape_keys)
+		return label_poll(context, test_shapes = True)
 	
 	def execute(self, context):
-		obj = bpy.context.active_object
+		obj = context.active_object
 		sel = get_visible_indexes(obj, context)[1]
 		shape_keys = obj.data.shape_keys.key_blocks
 		for i in sel:
@@ -314,16 +311,12 @@ class ShapeKeyCopySelected(bpy.types.Operator):
 	bl_label = "Create New Shape Key from Selected"
 	bl_description = "Create New Shape Key from Selected"
 	bl_options = {'REGISTER', 'UNDO'}
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	mirror = bpy.props.BoolProperty(default = False, description = "Create Mirror from Selected Shape Keys")
 	
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
-		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and 
-			(engine in cls.COMPAT_ENGINES) and obj.data.shape_keys)
+		return label_poll(context, test_shapes = True)
 	
 	def execute(self, context):
 		new_shape, name = shape_key_copy(context)
@@ -346,7 +339,7 @@ class ShapeKeyLabelAdd(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return True
+		return label_poll(context)
 	
 	def execute(self, context):
 		obj = context.object
@@ -378,7 +371,7 @@ class ShapeKeyLabelRemove(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return True
+		return label_poll(context)
 	
 	def execute(self, context):
 		obj = context.object
@@ -402,7 +395,7 @@ class ShapeKeySetIndex(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return True
+		return label_poll(context, test_shapes = True)
 	
 	def draw(self, context):
 		pass
@@ -448,7 +441,7 @@ class ShapeKeyCopyToLabel(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return True
+		return label_poll(context, test_shapes = True)
 	
 	def draw(self, context):
 		pass
@@ -483,7 +476,6 @@ class ShapeKeyAddToLabel(bpy.types.Operator):
 	bl_label = "Add to Label"
 	bl_description = "Add to Label"
 	bl_options = {'REGISTER', 'UNDO'}
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	from_mix = bpy.props.BoolProperty(
 		name = "Add To Label From Mix",
@@ -491,9 +483,7 @@ class ShapeKeyAddToLabel(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
-		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and (engine in cls.COMPAT_ENGINES))
+		return label_poll(context)
 	
 	def draw(self, context):
 		pass
@@ -532,13 +522,11 @@ class ShapeKeyRemoveFromLabel(bpy.types.Operator):
 	bl_label = "Remove From Label"
 	bl_description = "Remove From Label"
 	bl_options = {'REGISTER', 'UNDO'}
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
 		obj = context.object
-		if not (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and (engine in cls.COMPAT_ENGINES)):
+		if not label_poll(context):
 			return False
 		
 		labels = obj.data.shape_key_labels
@@ -568,16 +556,11 @@ class ShapeKeyDelete(bpy.types.Operator):
 	bl_label = "Delete Shape Key"
 	bl_description = "Delete Shape Key"
 	bl_options = {'REGISTER', 'UNDO'}
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
-		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} 
-			and (engine in cls.COMPAT_ENGINES))
+		return label_poll(context, test_shapes = True)
 		
-	
 	def draw(self, context):
 		pass
 
@@ -636,7 +619,6 @@ class ShapeKeyMoveInLabel(bpy.types.Operator):
 	bl_label = "Move Shape Key"
 	bl_description = "Move Shape Key"
 	bl_options = {'REGISTER', 'UNDO'}
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 	
 	type = bpy.props.EnumProperty(
 		name="Move Shape Key Direction",
@@ -648,9 +630,7 @@ class ShapeKeyMoveInLabel(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
-		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and (engine in cls.COMPAT_ENGINES))
+		return label_poll(context, test_shapes = True)
 	
 	def execute(self, context):
 		obj = context.object
@@ -780,13 +760,10 @@ class MESH_MT_shape_key_copy_to_label(Menu):
 
 class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 	bl_label = "Shape Keys"
-	COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
 	@classmethod
 	def poll(cls, context):
-		engine = context.scene.render.engine
-		obj = context.object
-		return (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and (engine in cls.COMPAT_ENGINES))
+		return label_poll(context)
 		
 	def draw(self, context):
 		layout = self.layout
