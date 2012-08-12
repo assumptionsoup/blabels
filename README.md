@@ -6,7 +6,7 @@ Advanced Shape Key Panel replaces the default shape key panel.  You can find it 
 
 ***
 
-To Install Blur Weights follow the normal procedure with installing addons.
+To Install Advanced Shape Key Panel follow the normal procedure with installing addons.
 
 For those unfamiliar with this process, open the Blender User Preferences (Ctrl + Alt + U).  Go to the Addons tab.  Click the Install Addon button, browse to where you downloaded the addon and select the python file.  Make sure that the "Testing" category is selected under Supported Level.  Type the name of the addon into the search box, and click on the enable addon checkbox.
 
