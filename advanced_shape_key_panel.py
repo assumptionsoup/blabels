@@ -956,31 +956,16 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			
 			##########################
 			# SHAPE KEYS BOTTOM ROW TOGGLES
-			
-			# Determine selection icon.
-			if context.scene.shape_keys_view_mode != 'ALL':
-				actual_indexes, actual_selected = get_visible_indexes(ob, context, skip_view_mode_filter = True)
-			else:
-				actual_indexes, actual_selected = indexes, selected
-			selection_icon = 'PROP_OFF'
-			if len(actual_selected) >= 0 and len(actual_selected) != len(actual_indexes):
-				selection_icon = 'PROP_ON'
-			
-			# Determine vis icon
-			if any(1 for i in indexes if key.key_blocks[i].mute):
-				vis_icon = 'VISIBLE_IPO_ON'
-			else:
-				vis_icon = 'VISIBLE_IPO_OFF'
-				
+
 			row = box.row(align = True)
 			row.scale_y = 0.8
 			row = row.split(percentage = 0.10, align = True)
-			row.operator("object.shape_key_toggle_selected", icon = selection_icon, text = '')
+			row.operator("object.shape_key_toggle_selected", icon = 'PROP_ON', text = '')
 			
 			row = row.split(percentage = 0.91, align = True)
 			row.label('')
 			
-			row.operator("object.shape_key_toggle_visible", icon = vis_icon, text = '') #.absolute = True
+			row.operator("object.shape_key_toggle_visible", icon = 'VISIBLE_IPO_ON', text = '') #.absolute = True
 			
 			##########################
 			# SIDE COLUMN BOTTOM ICONS
