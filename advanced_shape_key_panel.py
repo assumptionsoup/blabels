@@ -286,35 +286,42 @@ class ShapeKeyAxis(bpy.types.Operator):
 
 class ToggleShapeKey(bpy.types.Operator):
 	bl_idname = "object.shape_key_toggle"
-	bl_label = "Toggle Visible"
+	bl_label = "Inverse Selected Visibility"
 	bl_options = {'REGISTER', 'UNDO'}
-	bl_description = "Toggle Visible with Selected"
+	bl_description = "Inverse Selected Visibility"
+	
+	shift = bpy.props.BoolProperty(default = True, description = "Rotate Visible in Selection")
 	
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True)
 	
+	def invoke(self, context, event):
+		self.shift = event.shift
+		return self.execute(context)
+	
 	def execute(self, context):
 		obj = context.active_object
-		active_index = obj.active_shape_key_index
-		sel = get_visible_indexes(obj, context)[1]
+		indexes, selected = get_visible_indexes(obj, context)
 		shape_keys = obj.data.shape_keys.key_blocks
 
-		if sel:
-			if len(sel) == 1:
-				shape_keys[sel[0]].mute = not shape_keys[sel[0]].mute 
+		if selected:
+			if not self.shift or len(selected) == 1:
+				# Inverse Selected Visible
+				for i in selected:
+					shape_keys[i].mute = not shape_keys[i].mute
 			else:
-				# Hide other shape keys and save their states
-				vis = [x for x, i in enumerate(sel) if not shape_keys[i].mute]
+				# Rotate Selected Visible
+				vis = [x for x, i in enumerate(selected) if not shape_keys[i].mute]
 				if len(vis) != 1:
-					for i in sel:
+					for i in selected:
 						shape_keys[i].mute = 1
-					shape_keys[sel[0]].mute = 0
+					shape_keys[selected[0]].mute = 0
 					vis = [0]
 				
 				vis = vis[0]
-				shape_keys[sel[vis]].mute = True
-				shape_keys[sel[vis - 1]].mute = False		
+				shape_keys[selected[vis]].mute = True
+				shape_keys[selected[vis - 1]].mute = False		
 		return{'FINISHED'} 
 
 class NegateShapeKey(bpy.types.Operator):
