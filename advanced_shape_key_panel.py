@@ -164,28 +164,6 @@ def shape_keys_restore_muted(shape_keys, muted_states):
 	for x in range(len(shape_keys)):
 		shape_keys[x].mute = muted_states[x]
 
-def shape_key_copy(context):
-	obj = context.active_object
-	active_index = obj.active_shape_key_index
-	shape_keys = obj.data.shape_keys.key_blocks
-	name = shape_keys[active_index].name
-	
-	# Hide other shape keys and save their states
-	muted_states = shape_keys_mute_others(shape_keys, get_visible_indexes(obj, context)[1])
-	muted_states.append(False)
-	
-	# Copy
-	bpy.ops.object.shape_key_add_to_label(from_mix = True)
-	new_index = obj.active_shape_key_index
-	shape_keys[new_index].value = shape_keys[active_index].value
-	shape_keys[new_index].slider_max = shape_keys[active_index].slider_max
-	shape_keys[new_index].slider_min = shape_keys[active_index].slider_min
-	
-	# Restore states
-	shape_keys_restore_muted(shape_keys, muted_states)
-	
-	return shape_keys[new_index], name
-
 class ShapeKeyCreateCorrective(bpy.types.Operator):
 	bl_idname = "object.shape_key_create_corrective"
 	bl_label = "Create Corrective Driver"
@@ -355,30 +333,64 @@ class ShapeKeyCopy(bpy.types.Operator):
 	
 	mirror = bpy.props.BoolProperty(default = False, description = "Create Mirror from Selected Shape Keys")
 	selected = bpy.props.BoolProperty(default = True, description = "Create New Shape Key from Visible")
+	initial_global_undo_state = None
 	
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True)
 	
 	def invoke(self, context, event):
+		# self.initial_global_undo_state = bpy.context.user_preferences.edit.use_global_undo
 		self.selected = not event.shift
 		return self.execute(context)
 	
 	def execute(self, context):
+		# Data gathering
+		obj = context.object
+		shape_keys = obj.data.shape_keys.key_blocks
+		active_index = obj.active_shape_key_index
+		indexes, selected = get_visible_indexes(obj, context)
+		
 		if not self.selected:
-			obj = context.object
+			# Do add_to_label, with from mix = True
 			bpy.ops.object.shape_key_add_to_label(from_mix = True)
-			new_shape = obj.data.shape_keys.key_blocks[obj.active_shape_key_index]
-			name = new_shape.name
+			new_shape = shape_keys[obj.active_shape_key_index]
+		
 		else:
-			new_shape, name = shape_key_copy(context)
+			# Hide other shape keys and save their states
+			muted_states = shape_keys_mute_others(shape_keys, selected)
+			muted_states.append(False)
+			
+			# Copy
+			bpy.ops.object.shape_key_add_to_label(from_mix = True)
+			new_shape = shape_keys[obj.active_shape_key_index]
+			
+			# Restore states
+			shape_keys_restore_muted(shape_keys, muted_states)
 		
 		if self.mirror:
 			bpy.ops.object.shape_key_mirror()
-			new_shape.name = name + "_mirrored"
-		elif not self.selected:
-			new_shape.name = name + "_copy"
 		
+		if len(indexes) == 1 or (len(selected) == 1 and self.selected):
+			# Copy state from original
+			new_shape.value = shape_keys[active_index].value
+			new_shape.slider_max = shape_keys[active_index].slider_max
+			new_shape.slider_min = shape_keys[active_index].slider_min
+			name = shape_keys[active_index].name
+			
+		else:
+			# Turn on
+			new_shape.value = 1.0
+			new_shape.mute = False
+			name = 'New Key'
+		
+		if self.mirror:
+			new_shape.name = name + " Mirrored"
+		elif not self.selected:
+			new_shape.name = name + " Copy"
+		
+		# if self.initial_global_undo_state:
+			# bpy.context.user_preferences.edit.use_global_undo = self.initial_global_undo_state
 		return{'FINISHED'}
 
 '''----------------------------------------------------------------------------
