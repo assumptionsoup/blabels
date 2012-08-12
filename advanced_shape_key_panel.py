@@ -92,7 +92,10 @@ def get_visible_indexes(obj, context, skip_view_mode_filter = False):
 			if context.scene.shape_keys_view_mode == 'VISIBLE':
 				indexes = [i for i in indexes if not keys.key_blocks[i].mute]
 				selected = [i for i in selected if i in indexes]
-				
+			if context.scene.shape_keys_view_mode == 'HIDDEN':
+				indexes = [i for i in indexes if keys.key_blocks[i].mute]
+				selected = [i for i in selected if i in indexes]
+			
 			if context.scene.shape_keys_view_mode == 'UNLABELED':
 				indexes_set = set(indexes)
 				for label in labels:
@@ -931,7 +934,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		
 		side_col.menu("MESH_MT_shape_key_specials", icon = 'DOWNARROW_HLT', text = "")
 		#shape_key_add_to_label
-		if indexes:
+		if key:
 			row = box.row()
 			
 			##########################
@@ -947,7 +950,8 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			if ob.data.shape_key_labels and len(ob.data.shape_key_labels) > 1:	
 				row = row.split()
 				row.menu("MESH_MT_shape_key_copy_to_label", text = "Copy to Label")
-			
+		
+		if indexes:
 			##########################
 			# SHAPE KEYS
 			for i in indexes:
@@ -1108,6 +1112,7 @@ def register():
 				('UNLABELED', "Unlabeled", "View Unlabeled Shape Keys"),
 				('SELECTED', "Selected", "View Selected Shape Keys"),
 				('VISIBLE', "Visible", "View Visible Shape Keys"),
+				('HIDDEN', "Hidden", "View Hidden Shape Keys"),
 				),
 		)
 	
