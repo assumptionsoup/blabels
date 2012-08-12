@@ -59,16 +59,15 @@ def format_label_name(label, num_items = None):
 	label.name = "{:<20}({})".format(name, num_items)
 
 def get_visible_selection(obj, indexes):
-	indexes = set(indexes)
-		
 	# Get selected
 	selected = [i.index for i in obj.selected_shape_keys]
 	if not selected:
 		selected = [obj.active_shape_key_index]
+	selected = set(selected)
 	
-	return [i for i in selected if i in indexes]
+	return [i for i in indexes if i in selected]
 
-def get_visible_indexes(obj, context):
+def get_visible_indexes(obj, context, skip_view_mode_filter = False):
 	# Get visible shape key indexes
 	labels = obj.data.shape_key_labels
 	index = obj.active_shape_key_label_index
@@ -83,23 +82,25 @@ def get_visible_indexes(obj, context):
 			indexes = []
 	
 	selected = []
-	if indexes and obj.data.shape_key_labels:		
+	if indexes and obj.data.shape_key_labels:	
 		selected = get_visible_selection(obj, indexes)
-		
-		# Filter "ALL" label by view mode
-		if context.scene.shape_keys_view_mode == 'SELECTED':
-			indexes = selected[:]
-		
-		if context.scene.shape_keys_view_mode == 'VISIBLE':
-			indexes = [i for i in indexes if not keys.key_blocks[i].mute]
-		
-		if context.scene.shape_keys_view_mode == 'UNLABELED':
-			indexes_set = set(indexes)
-			for label in labels:
-				for label_indexes in label.indexes:
-					if label_indexes.index in indexes_set:
-						indexes_set.remove(label_indexes.index)
-			indexes = [i for i in indexes if i in indexes_set]
+		if not skip_view_mode_filter:			
+			# Filter "ALL" label by view mode
+			if context.scene.shape_keys_view_mode == 'SELECTED':
+				indexes = selected[:]
+			
+			if context.scene.shape_keys_view_mode == 'VISIBLE':
+				indexes = [i for i in indexes if not keys.key_blocks[i].mute]
+				selected = [i for i in selected if i in indexes]
+				
+			if context.scene.shape_keys_view_mode == 'UNLABELED':
+				indexes_set = set(indexes)
+				for label in labels:
+					for label_indexes in label.indexes:
+						if label_indexes.index in indexes_set:
+							indexes_set.remove(label_indexes.index)
+				indexes = [i for i in indexes if i in indexes_set]
+				selected = [i for i in selected if i in indexes]
 	
 	return indexes, selected
 
@@ -730,6 +731,100 @@ class ShapeKeyMoveInLabel(bpy.types.Operator):
 				obj.active_shape_key_index = new_key_index
 		return {'FINISHED'}
 
+class ShapeKeyToggleSelected(bpy.types.Operator):
+	bl_idname = "object.shape_key_toggle_selected"
+	bl_label = "Toggle Selected Shape Keys"
+	bl_description = "Toggle Selected Shape Keys"
+	bl_options = {'REGISTER', 'UNDO'}
+	
+	shift = bpy.props.BoolProperty(default = False)
+	
+	@classmethod
+	def poll(cls, context):
+		return label_poll(context, test_shapes = True)
+	
+	def draw(self, context):
+		pass
+	
+	def invoke(self, context, event):
+		self.shift = event.shift
+		return self.execute(context)
+	
+	def execute(self, context):
+		obj = context.object
+		
+		actual_indexes, actual_selected = get_visible_indexes(obj, context, skip_view_mode_filter = True)
+		
+		# Clean selected
+		for x in range(len(obj.selected_shape_keys)):
+			obj.selected_shape_keys.remove(0)
+		
+		if not self.shift:
+			# Select or de-select all
+			if len(actual_selected) >= 0 and len(actual_selected) != len(actual_indexes):
+				for i in actual_indexes:
+					index = obj.selected_shape_keys.add()
+					index.index = i
+		else:
+			# Inverse selection
+			actual_selected = set(actual_selected)
+			for i in actual_indexes:
+				if i not in actual_selected:
+					index = obj.selected_shape_keys.add()
+					index.index = i
+		
+		# Correct active index.  Correct for 0 selected.
+		selected = [i.index for i in obj.selected_shape_keys]
+		if selected:
+			if obj.active_shape_key_index not in selected:
+				obj.active_shape_key_index = selected[-1]
+		else:
+			obj.active_shape_key_index = 0
+			index = obj.selected_shape_keys.add()
+			index.index = 0
+		return {'FINISHED'}
+		
+class ShapeKeyToggleVisible(bpy.types.Operator):
+	bl_idname = "object.shape_key_toggle_visible"
+	bl_label = "Toggle Visible Shape Keys"
+	bl_description = "Toggle Visible Shape Keys"
+	bl_options = {'REGISTER', 'UNDO'}
+	
+	
+	shift = bpy.props.BoolProperty(default = False)
+	
+	@classmethod
+	def poll(cls, context):
+		return label_poll(context, test_shapes = True)
+	
+	def draw(self, context):
+		pass
+	
+	def invoke(self, context, event):
+		self.shift = event.shift
+		return self.execute(context)
+	
+	def execute(self, context):
+		obj = context.object
+		keys = obj.data.shape_keys.key_blocks
+		
+		indexes, selected = get_visible_indexes(obj, context)
+		
+		if not self.shift:
+			# Hide or show all
+			if any(1 for i in indexes if keys[i].mute):
+				for i in indexes:
+					keys[i].mute = False
+			else:
+				for i in indexes:
+					keys[i].mute = True
+		else:
+			# Inverse Visible
+			for i in indexes:
+				keys[i].mute = not keys[i].mute
+		
+		return {'FINISHED'}
+
 class MESH_MT_shape_key_view_mode(Menu):
 	bl_label = "View Mode"
 
@@ -753,7 +848,19 @@ class MESH_MT_shape_key_copy_to_label(Menu):
 			if x > 0:
 				layout.operator("object.shape_key_copy_to_label", icon='FILE_FOLDER', text = label.name).index = x
 
+
+class NullOperator(bpy.types.Operator):
+	bl_idname = "object.null_operator"
+	bl_label = ""
+	bl_icon = 'BLANK1'
+	bl_options = {'REGISTER'}
 	
+	@classmethod
+	def poll(cls, context):
+		return True
+	def execute(self, context):
+		return {'FINISHED'} 
+
 '''----------------------------------------------------------------------------
                             Shape Key Panel
 ----------------------------------------------------------------------------'''
@@ -795,21 +902,21 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		box = row.box()
 		col = row.column()
 		col.separator()
-		sub = col.column(align=True)
-		sub.operator("object.shape_key_add_to_label", icon = 'ZOOMIN', text = "").from_mix = False
-		sub.operator("object.shape_key_remove_from_label", icon = 'ZOOMOUT', text = "")
-		sub.operator("object.shape_key_delete", icon = 'PANEL_CLOSE', text = "")
+		side_col = col.column(align=True)
+		side_col.operator("object.shape_key_add_to_label", icon = 'ZOOMIN', text = "").from_mix = False
+		side_col.operator("object.shape_key_remove_from_label", icon = 'ZOOMOUT', text = "")
+		side_col.operator("object.shape_key_delete", icon = 'PANEL_CLOSE', text = "")
 		
 		indexes, selected = get_visible_indexes(ob, context)
 		
 		if indexes:
-			sub.operator("object.shape_key_toggle", icon = 'RESTRICT_VIEW_OFF', text = '')
-			sub.operator("object.shape_key_copy_selected", icon = 'PASTEDOWN', text = '')
-			sub.operator("object.shape_key_copy_selected", icon = 'ARROW_LEFTRIGHT', text = '').mirror = True
-			sub.operator("object.shape_key_negate", icon = 'FORCE_CHARGE', text = '')
-			sub.operator("object.shape_key_axis", icon = 'MANIPUL', text = '')
+			side_col.operator("object.shape_key_toggle", icon = 'RESTRICT_VIEW_OFF', text = '')
+			side_col.operator("object.shape_key_copy_selected", icon = 'PASTEDOWN', text = '')
+			side_col.operator("object.shape_key_copy_selected", icon = 'ARROW_LEFTRIGHT', text = '').mirror = True
+			side_col.operator("object.shape_key_negate", icon = 'FORCE_CHARGE', text = '')
+			side_col.operator("object.shape_key_axis", icon = 'MANIPUL', text = '')
 		
-		sub.menu("MESH_MT_shape_key_specials", icon = 'DOWNARROW_HLT', text = "")
+		side_col.menu("MESH_MT_shape_key_specials", icon = 'DOWNARROW_HLT', text = "")
 		
 		if indexes:
 			row = box.row()
@@ -848,6 +955,34 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 				row.prop(ob.data.shape_keys.key_blocks[i], 'mute', text = '')
 			
 			##########################
+			# SHAPE KEYS BOTTOM ROW TOGGLES
+			
+			# Determine selection icon.
+			if context.scene.shape_keys_view_mode != 'ALL':
+				actual_indexes, actual_selected = get_visible_indexes(ob, context, skip_view_mode_filter = True)
+			else:
+				actual_indexes, actual_selected = indexes, selected
+			selection_icon = 'PROP_OFF'
+			if len(actual_selected) >= 0 and len(actual_selected) != len(actual_indexes):
+				selection_icon = 'PROP_ON'
+			
+			# Determine vis icon
+			if any(1 for i in indexes if key.key_blocks[i].mute):
+				vis_icon = 'VISIBLE_IPO_ON'
+			else:
+				vis_icon = 'VISIBLE_IPO_OFF'
+				
+			row = box.row(align = True)
+			row.scale_y = 0.8
+			row = row.split(percentage = 0.10, align = True)
+			row.operator("object.shape_key_toggle_selected", icon = selection_icon, text = '')
+			
+			row = row.split(percentage = 0.91, align = True)
+			row.label('')
+			
+			row.operator("object.shape_key_toggle_visible", icon = vis_icon, text = '') #.absolute = True
+			
+			##########################
 			# SIDE COLUMN BOTTOM ICONS
 			
 			# A trip to photoshop gave me this.
@@ -856,16 +991,16 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			# But I don't believe this is possible with the current API
 			
 			side_icons = 6 + 5
-			button_space = len(indexes) * 24 - 4 + 28 #shapekey row adds 28ish
+			button_space = len(indexes) * 24 - 4 + 30 # + 9 #shapekey row adds 30ish, Extra bottom row as padding adds 9ish.
 			side_space = side_icons * 20 + 4	# This may be incorrect if side_icons is less than 4
 			space = button_space - side_space
 			if space > 0:
-				sub = sub.column()
-				sub.scale_y = space / 6.0
-				sub.separator()			
-			sub =  col.column(align=True)
-			sub.operator("object.shape_key_move_in_label", icon = 'TRIA_UP', text = "").type = 'UP'
-			sub.operator("object.shape_key_move_in_label", icon = 'TRIA_DOWN', text = "").type = 'DOWN'
+				side_col = side_col.column()
+				side_col.scale_y = space / 6.0
+				side_col.separator()			
+			side_col =  col.column(align=True)
+			side_col.operator("object.shape_key_move_in_label", icon = 'TRIA_UP', text = "").type = 'UP'
+			side_col.operator("object.shape_key_move_in_label", icon = 'TRIA_DOWN', text = "").type = 'DOWN'
 			
 			
 			##########################
@@ -926,9 +1061,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 				row.active = enable_edit_value
 				row.prop(key, 'eval_time')
 				row.prop(key, 'slurph')
-		else:
-			row = box.row(align = True)
-
+		row = box.row(align = True)
 def label_index_updated(self, context):
 	obj = context.object
 	
