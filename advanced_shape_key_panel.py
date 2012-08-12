@@ -307,25 +307,38 @@ class NegateShapeKey(bpy.types.Operator):
 				shape_keys[i].value = 1
 		return{'FINISHED'} 
 
-class ShapeKeyCopySelected(bpy.types.Operator):
-	bl_idname = "object.shape_key_copy_selected"
+class ShapeKeyCopy(bpy.types.Operator):
+	bl_idname = "object.shape_key_copy"
 	bl_label = "Create New Shape Key from Selected"
 	bl_description = "Create New Shape Key from Selected"
 	bl_options = {'REGISTER', 'UNDO'}
 	
 	mirror = bpy.props.BoolProperty(default = False, description = "Create Mirror from Selected Shape Keys")
+	selected = bpy.props.BoolProperty(default = True, description = "Create New Shape Key from Visible")
 	
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True)
 	
+	def invoke(self, context, event):
+		self.selected = not event.shift
+		return self.execute(context)
+	
 	def execute(self, context):
-		new_shape, name = shape_key_copy(context)
+		if not self.selected:
+			obj = context.object
+			bpy.ops.object.shape_key_add_to_label(from_mix = True)
+			new_shape = obj.data.shape_keys.key_blocks[obj.active_shape_key_index]
+			name = new_shape.name
+		else:
+			new_shape, name = shape_key_copy(context)
+		
 		if self.mirror:
 			bpy.ops.object.shape_key_mirror()
 			new_shape.name = name + "_mirrored"
-		else:
+		elif not self.selected:
 			new_shape.name = name + "_copy"
+		
 		return{'FINISHED'}
 
 '''----------------------------------------------------------------------------
@@ -911,13 +924,13 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		
 		if indexes:
 			side_col.operator("object.shape_key_toggle", icon = 'RESTRICT_VIEW_OFF', text = '')
-			side_col.operator("object.shape_key_copy_selected", icon = 'PASTEDOWN', text = '')
-			side_col.operator("object.shape_key_copy_selected", icon = 'ARROW_LEFTRIGHT', text = '').mirror = True
+			side_col.operator("object.shape_key_copy", icon = 'PASTEDOWN', text = '')
+			side_col.operator("object.shape_key_copy", icon = 'ARROW_LEFTRIGHT', text = '').mirror = True
 			side_col.operator("object.shape_key_negate", icon = 'FORCE_CHARGE', text = '')
 			side_col.operator("object.shape_key_axis", icon = 'MANIPUL', text = '')
 		
 		side_col.menu("MESH_MT_shape_key_specials", icon = 'DOWNARROW_HLT', text = "")
-		
+		#shape_key_add_to_label
 		if indexes:
 			row = box.row()
 			
