@@ -220,7 +220,7 @@ class ShapeKeyAxis(bpy.types.Operator):
 		soft_max = 1,
 		subtype = 'XYZ')
 		
-	active_index = None
+	selected = None
 	offsets = []
 
 	@classmethod
@@ -232,18 +232,25 @@ class ShapeKeyAxis(bpy.types.Operator):
 		shape_keys = obj.data.shape_keys.key_blocks
 		
 		# Initialize.  Isn't there a function for this?  Maybe that's only for modal operators.
-		if self.active_index is None:
+		if self.selected is None:
 			# Gather data
+			indexes, self.selected = get_visible_indexes(obj, context)
+			
 			self.active_index = obj.active_shape_key_index
 			
-			# Get basis
-			for x in range(len(shape_keys[0].data)):
-				offset = shape_keys[self.active_index].data[x].co - shape_keys[0].data[x].co
-				if offset != 0.0:
-					self.offsets.append( (x, offset) )
-			
-		for x, offset in self.offsets:
-			shape_keys[self.active_index].data[x].co = shape_keys[0].data[x].co + inline_vector_mult(offset, self.deform_axis)
+			# Get offsets		
+			for x, i in enumerate(self.selected):
+				offset_key = []
+				for x in range(len(shape_keys[0].data)):
+					offset = shape_keys[i].data[x].co - shape_keys[0].data[x].co
+					if offset != 0.0:
+						offset_key.append(( x, offset ))
+				self.offsets.append(offset_key)
+		
+		# Apply offsets
+		for x, i in enumerate(self.selected):
+			for x, offset in self.offsets[x]:
+				shape_keys[i].data[x].co = shape_keys[0].data[x].co + inline_vector_mult(offset, self.deform_axis)
 	
 		obj.data.update()
 
