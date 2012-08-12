@@ -264,9 +264,9 @@ class ShapeKeyAxis(bpy.types.Operator):
 
 class ToggleShapeKey(bpy.types.Operator):
 	bl_idname = "object.shape_key_toggle"
-	bl_label = "Inverse Selected Visibility"
+	bl_label = "Inverse Visibility of Selected"
 	bl_options = {'REGISTER', 'UNDO'}
-	bl_description = "Inverse Selected Visibility"
+	bl_description = "Inverse Visibility of Selected"
 	
 	shift = bpy.props.BoolProperty(default = True, description = "Rotate Visible in Selection")
 	
@@ -304,19 +304,33 @@ class ToggleShapeKey(bpy.types.Operator):
 
 class NegateShapeKey(bpy.types.Operator):
 	bl_idname = "object.shape_key_negate"
-	bl_label = "Negate"
-	bl_description = "Negate Weight"
+	bl_label = "Negate Weight of Selected"
+	bl_description = "Negate Weight of Selected"
 	bl_options = {'REGISTER', 'UNDO'}
+	
+	selected = bpy.props.BoolProperty(default = True, description = "Negate Weight of Visible")
 	
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True)
 	
+	def invoke(self, context, event):
+		# self.initial_global_undo_state = bpy.context.user_preferences.edit.use_global_undo
+		self.selected = not event.shift
+		return self.execute(context)
+	
 	def execute(self, context):
+		# Data Gathering
 		obj = context.active_object
-		sel = get_visible_indexes(obj, context)[1]
+		indexes, selected = get_visible_indexes(obj, context)
 		shape_keys = obj.data.shape_keys.key_blocks
-		for i in sel:
+		
+		# Operate on selected
+		if self.selected:
+			indexes = selected
+		
+		# Inverse Weights
+		for i in indexes:
 			if shape_keys[i].value >= 0:
 				shape_keys[i].slider_min = -1.0
 				shape_keys[i].value = -1.0
