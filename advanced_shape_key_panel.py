@@ -464,6 +464,45 @@ class ShapeKeyLabelRemove(bpy.types.Operator):
 			obj.active_shape_key_label_index = min(len(keys) - 2, index)
 		return {'FINISHED'} 
 
+
+class ShapeKeyLabelMove(bpy.types.Operator):
+	bl_idname = "object.shape_key_label_move"
+	bl_label = "Move Label"
+	bl_description = "Move Label"
+	bl_options = {'REGISTER', 'UNDO'}
+	
+	type = bpy.props.EnumProperty(
+		name="Move Label Direction",
+		items =	(('UP', "Up", "Up"),
+				('DOWN', "Down", "Down"),
+				),
+		default = 'UP'
+		)
+	
+	@classmethod
+	def poll(cls, context):
+		return label_poll(context)
+	
+	def execute(self, context):
+		# Gather data
+		obj = context.object
+		mesh = obj.data
+		keys = mesh.shape_key_labels.keys()
+		index = obj.active_shape_key_label_index
+		labels = mesh.shape_key_labels
+		
+		# Check for labels.  Don't move special label "ALL".
+		if keys and index > 0:
+			if self.type == 'UP':
+				if index - 1 > 0:
+					labels.move(index, index - 1)
+					obj.active_shape_key_label_index -= 1
+			else:
+				if index + 1 < len(keys):
+					labels.move(index, index + 1)
+					obj.active_shape_key_label_index += 1
+		return {'FINISHED'} 
+
 class ShapeKeySetIndex(bpy.types.Operator):
 	bl_idname = "object.shape_key_set_index"
 	bl_label = "Set Active Shape Key"
@@ -965,10 +1004,20 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		row.template_list(ob.data, "shape_key_labels", ob, "active_shape_key_label_index", rows = 4) #
 	
 		col = row.column() #.split(percentage = 0.5)
-		sub = col.column(align=True)
+		sub = col.column( align=True )
 		sub.operator("object.shape_key_label_add", icon = 'ZOOMIN', text="")
 		sub.operator("object.shape_key_label_remove", icon = 'ZOOMOUT', text="")
 		
+		
+		sub =  col.column()
+		sub.separator()
+		sub.scale_y = 4.9
+		
+		sub =  col.column(align=True)
+		sub.operator("object.shape_key_label_move", icon = 'TRIA_UP', text = "").type = 'UP'
+		sub.operator("object.shape_key_label_move", icon = 'TRIA_DOWN', text = "").type = 'DOWN'
+		
+	
 		labels = ob.data.shape_key_labels
 		if labels:
 			row = layout.row()
