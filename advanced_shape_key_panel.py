@@ -1176,6 +1176,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 				row.prop(key, 'eval_time')
 				row.prop(key, 'slurph')
 		row = box.row(align = True)
+		
 def label_index_updated(self, context):
 	obj = context.object
 	
