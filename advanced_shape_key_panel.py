@@ -213,7 +213,7 @@ class ShapeKeyAxis(bpy.types.Operator):
 	bl_description = "Adjust Shape Key Movement by Axis"
 	bl_options = {'REGISTER', 'UNDO'}
 	
-	deform_axis = bpy.types.Scene.shape_key_axis_deform = bpy.props.FloatVectorProperty(
+	deform_axis = bpy.props.FloatVectorProperty(
 		name = "Deform Axis", 
 		description = "",
 		default = (1, 1, 1),
@@ -257,10 +257,6 @@ class ShapeKeyAxis(bpy.types.Operator):
 
 		return{'FINISHED'} 
 	
-	def invoke(self, context, event):
-		self.deform_axis = context.scene.shape_key_axis_deform
-		return self.execute(context)
-
 
 class ToggleShapeKey(bpy.types.Operator):
 	bl_idname = "object.shape_key_toggle"
@@ -407,6 +403,38 @@ class ShapeKeyCopy(bpy.types.Operator):
 			# bpy.context.user_preferences.edit.use_global_undo = self.initial_global_undo_state
 		return{'FINISHED'}
 
+
+class ShapeKeyScrubTwo(bpy.types.Operator):
+	bl_idname = "object.shape_key_scrub_two"
+	bl_label = "Scrub Between Two Shape Keys"
+	bl_description = "Scrub Between Two Shape Keys"
+	bl_options = {'REGISTER', 'UNDO'}
+	
+	percent = bpy.props.FloatProperty(
+		name = "Percent",
+		default = 0.5,
+		soft_min = 0,
+		soft_max = 1,
+		subtype = 'FACTOR'
+		)
+	
+	@classmethod
+	def poll(cls, context):
+		return label_poll(context, test_shapes = True)
+	
+	def execute(self, context):
+		obj = context.object
+		mesh = obj.data
+		index = obj.active_shape_key_label_index
+		
+		# Get indexes of visible keys
+		indexes, sel = get_visible_indexes(obj, context)
+		
+		if len(sel) == 2:
+			mesh.shape_keys.key_blocks[sel[0]].value = self.percent
+			mesh.shape_keys.key_blocks[sel[1]].value = 1.0 - self.percent
+		return {'FINISHED'}
+
 '''----------------------------------------------------------------------------
                             Label Operators
 ----------------------------------------------------------------------------'''
@@ -463,7 +491,6 @@ class ShapeKeyLabelRemove(bpy.types.Operator):
 			mesh.shape_key_labels.remove(index)
 			obj.active_shape_key_label_index = min(len(keys) - 2, index)
 		return {'FINISHED'} 
-
 
 class ShapeKeyLabelMove(bpy.types.Operator):
 	bl_idname = "object.shape_key_label_move"
@@ -1043,7 +1070,8 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			side_col.operator("object.shape_key_copy", icon = 'ARROW_LEFTRIGHT', text = '').mirror = True
 			side_col.operator("object.shape_key_negate", icon = 'FORCE_CHARGE', text = '')
 			side_col.operator("object.shape_key_axis", icon = 'MANIPUL', text = '')
-		
+			side_col.operator("object.shape_key_scrub_two", icon = 'IPO', text = '')
+			
 		side_col.menu("MESH_MT_shape_key_specials", icon = 'DOWNARROW_HLT', text = "")
 		#shape_key_add_to_label
 		if key:
@@ -1104,7 +1132,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			# A better solution would be a way to attach columns to the bottom of another element
 			# But I don't believe this is possible with the current API
 			
-			side_icons = 6 + 5
+			side_icons = 6 + 6
 			button_space = len(indexes) * 24 - 4 + 30 # + 9 #shapekey row adds 30ish, Extra bottom row as padding adds 9ish.
 			side_space = side_icons * 20 + 4	# This may be incorrect if side_icons is less than 4
 			space = button_space - side_space
@@ -1241,6 +1269,7 @@ def unregister():
 	bpy.types.MESH_MT_shape_key_specials.remove(shape_key_specials)
 	
 	del bpy.types.Scene.shape_keys_view_mode
+	
 	# Should I delete the rna types created?  Hmmmm.  
 	# I don't want a user to lose data from reloading my addon,
 	# but I also don't want extra data saved if it's permanently disabled.
