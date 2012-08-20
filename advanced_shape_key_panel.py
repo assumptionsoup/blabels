@@ -55,11 +55,14 @@ class MeshButtonsPanel():
                             Label Helpers
 ----------------------------------------------------------------------------'''
 
-def label_poll(context, test_shapes = False):
+def label_poll(context, test_shapes = False, test_mode = True):
 	# Simple function for most the poll methods in this module
 	obj = context.object
 	if not (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and \
-		(context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'})):
+		context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
+		return False
+
+	if test_mode and context.mode == 'EDIT_MESH':
 		return False
 	
 	if test_shapes:
@@ -71,7 +74,7 @@ def strip_label_number(label):
 	# Remove numbers from label name and return it
 	name = label.name
 	name = name.split("(")[0]
-	return name.strip("")
+	return name.strip()
 	
 def format_label_name(label, num_items = None):
 	''' Updates the label name with the number of items in the label if no
@@ -182,7 +185,7 @@ class ShapeKeyCreateCorrective(bpy.types.Operator):
 	@classmethod
 	def poll(cls, context):
 		obj = context.object
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def execute(self, context):
 		# Gather data
@@ -215,7 +218,6 @@ class ShapeKeyCreateCorrective(bpy.types.Operator):
 			
 		return{'FINISHED'} 
 
-
 class ShapeKeyAxis(bpy.types.Operator):
 	bl_idname = "object.shape_key_axis"
 	bl_label = "Limit Axis"
@@ -235,7 +237,7 @@ class ShapeKeyAxis(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def execute(self, context):
 		obj = context.active_object
@@ -266,7 +268,6 @@ class ShapeKeyAxis(bpy.types.Operator):
 
 		return{'FINISHED'} 
 	
-
 class ToggleShapeKey(bpy.types.Operator):
 	bl_idname = "object.shape_key_toggle"
 	bl_label = "Inverse Visibility of Selected"
@@ -277,7 +278,7 @@ class ToggleShapeKey(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def invoke(self, context, event):
 		self.shift = event.shift
@@ -317,7 +318,7 @@ class NegateShapeKey(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def invoke(self, context, event):
 		# self.initial_global_undo_state = bpy.context.user_preferences.edit.use_global_undo
@@ -412,7 +413,6 @@ class ShapeKeyCopy(bpy.types.Operator):
 			# bpy.context.user_preferences.edit.use_global_undo = self.initial_global_undo_state
 		return{'FINISHED'}
 
-
 class ShapeKeyScrubTwo(bpy.types.Operator):
 	bl_idname = "object.shape_key_scrub_two"
 	bl_label = "Scrub Between Two Shape Keys"
@@ -429,7 +429,7 @@ class ShapeKeyScrubTwo(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def execute(self, context):
 		obj = context.object
@@ -456,7 +456,7 @@ class ShapeKeyLabelAdd(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context)
+		return label_poll(context, test_mode = False)
 	
 	def execute(self, context):
 		obj = context.object
@@ -488,7 +488,7 @@ class ShapeKeyLabelRemove(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context)
+		return label_poll(context, test_mode = False)
 	
 	def execute(self, context):
 		obj = context.object
@@ -517,7 +517,7 @@ class ShapeKeyLabelMove(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context)
+		return label_poll(context, test_mode = False)
 	
 	def execute(self, context):
 		# Gather data
@@ -550,7 +550,7 @@ class ShapeKeySetIndex(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def draw(self, context):
 		pass
@@ -785,7 +785,7 @@ class ShapeKeyMoveInLabel(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def execute(self, context):
 		obj = context.object
@@ -895,7 +895,7 @@ class ShapeKeyToggleSelected(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def draw(self, context):
 		pass
@@ -949,7 +949,7 @@ class ShapeKeyToggleVisible(bpy.types.Operator):
 	
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context, test_shapes = True)
+		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def draw(self, context):
 		pass
@@ -1023,7 +1023,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 
 	@classmethod
 	def poll(cls, context):
-		return label_poll(context)
+		return label_poll(context, test_mode = False)
 		
 	def draw(self, context):
 		layout = self.layout
