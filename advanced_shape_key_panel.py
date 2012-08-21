@@ -117,7 +117,7 @@ def get_visible_indexes(context, skip_view_mode_filter = False):
 			indexes = []
 	
 	selected = []
-	if indexes and obj.data.shape_key_labels:	
+	if indexes:
 		selected = get_visible_selection(obj, indexes)
 		if not skip_view_mode_filter:			
 			# Filter "ALL" label by view mode
