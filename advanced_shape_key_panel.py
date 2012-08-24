@@ -353,6 +353,7 @@ class ShapeKeyCopy(bpy.types.Operator):
 	
 	mirror = bpy.props.BoolProperty(default = False, description = "Create Mirror from Selected Shape Keys")
 	selected = bpy.props.BoolProperty(default = True, description = "Create New Shape Key from Visible")
+	absolute = bpy.props.BoolProperty(default = False, description = "Copy Shape Key at a value of 1.")
 	initial_global_undo_state = None
 	
 	@classmethod
@@ -362,8 +363,10 @@ class ShapeKeyCopy(bpy.types.Operator):
 	def invoke(self, context, event):
 		# self.initial_global_undo_state = bpy.context.user_preferences.edit.use_global_undo
 		self.selected = not event.shift
+		self.absolute = event.ctrl
 		return self.execute(context)
-	
+		
+			
 	def execute(self, context):
 		# Data gathering
 		obj = context.object
@@ -373,29 +376,40 @@ class ShapeKeyCopy(bpy.types.Operator):
 		
 		if not self.selected:
 			# Do add_to_label, with from mix = True
-			bpy.ops.object.shape_key_add_to_label(from_mix = True)
+			bpy.ops.object.shape_key_add_to_label(from_mix = not self.absolute)
 			new_shape = shape_keys[obj.active_shape_key_index]
-		
+			
 		else:
 			# Hide other shape keys and save their states
 			muted_states = shape_keys_mute_others(shape_keys, selected)
 			muted_states.append(False)
 			
 			# Copy
-			bpy.ops.object.shape_key_add_to_label(from_mix = True)
+			bpy.ops.object.shape_key_add_to_label(from_mix = not self.absolute)
 			new_shape = shape_keys[obj.active_shape_key_index]
 			
 			# Restore states
 			shape_keys_restore_muted(shape_keys, muted_states)
 		
+		if self.absolute:
+			# Copy Absolute (copy the shape as if it were at a value of 1)
+			if self.selected:
+				copy_indexes = selected
+			else:
+				copy_indexes = [i for i in indexes if not shape_keys[i].mute]
+			new_index = obj.active_shape_key_index
+			
+			for i in copy_indexes:
+				for y in range(len(shape_keys[active_index].data)):
+					shape_keys[new_index].data[y].co += shape_keys[i].data[y].co - shape_keys[0].data[y].co
 		if self.mirror:
 			bpy.ops.object.shape_key_mirror()
 		
 		if len(indexes) == 1 or (len(selected) == 1 and self.selected):
 			# Copy state from original
-			new_shape.value = shape_keys[active_index].value
-			new_shape.slider_max = shape_keys[active_index].slider_max
-			new_shape.slider_min = shape_keys[active_index].slider_min
+			new_shape.value = 1.0 #shape_keys[active_index].value
+			# new_shape.slider_max = shape_keys[active_index].slider_max
+			# new_shape.slider_min = shape_keys[active_index].slider_min
 			name = shape_keys[active_index].name
 			
 		else:
