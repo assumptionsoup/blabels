@@ -233,6 +233,7 @@ class ShapeKeyAxis(bpy.types.Operator):
 		subtype = 'XYZ')
 		
 	selected = None
+	invoked = False
 	offsets = []
 
 	@classmethod
@@ -244,13 +245,12 @@ class ShapeKeyAxis(bpy.types.Operator):
 		shape_keys = obj.data.shape_keys.key_blocks
 		
 		# Initialize.  Isn't there a function for this?  Maybe that's only for modal operators.
-		if self.selected is None:
+		if self.invoked:
 			# Gather data
 			indexes, self.selected = get_visible_indexes(context)
 			
-			self.active_index = obj.active_shape_key_index
-			
-			# Get offsets		
+			# Get offsets
+			self.offsets = []			
 			for x, i in enumerate(self.selected):
 				offset_key = []
 				for x in range(len(shape_keys[0].data)):
@@ -265,9 +265,14 @@ class ShapeKeyAxis(bpy.types.Operator):
 				shape_keys[i].data[x].co = shape_keys[0].data[x].co + inline_vector_mult(offset, self.deform_axis)
 	
 		obj.data.update()
-
+		
+		self.invoked = False
 		return{'FINISHED'} 
 	
+	def invoke(self, context, event):
+		self.invoked = True
+		return self.execute(context)
+		
 class ToggleShapeKey(bpy.types.Operator):
 	bl_idname = "object.shape_key_toggle"
 	bl_label = "Inverse Visibility of Selected"
