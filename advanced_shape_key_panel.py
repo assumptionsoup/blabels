@@ -24,11 +24,12 @@ of other shape key related operations.'''
 import bpy
 from mathutils import Vector
 from bpy.types import Menu, Panel
+from advanced_labels import *
 
 bl_info = {
     "name": "Advanced Shapekey Panel",
     "author": "Jordan Hueckstaedt",
-    "version": (1, 0),
+    "version": (1, 1),
     "blender": (2, 63, 0),
     "location": "Properties > Shape Keys",
     "warning": "", # used for warning icon and text in addons panel
@@ -40,16 +41,81 @@ bl_info = {
     "category": "Rigging"
 }
 
-class MeshButtonsPanel():
-	bl_space_type = 'PROPERTIES'
-	bl_region_type = 'WINDOW'
-	bl_context = 'data'
+class Advanced_Shape_Key_Labels( Advanced_Labels):
+	def get_labels( self ):
+		return self.context.object.data.shape_key_labels
+	
+	def get_selected_items( self ):
+		return self.context.object.selected_shape_keys
+	
+	def get_active_index( self ):
+		return self.context.object.active_shape_key_label_index
+	
+	def set_active_index( self, index ):
+		self.context.object.active_shape_key_label_index = index
+	
+	def get_active_item_index( self ):
+		return self.context.object.active_shape_key_index
+	
+	def set_active_item_index( self, index ):
+		self.context.object.active_shape_key_index = index
+	
+	def get_items( self ):
+		obj = self.context.object
+		if obj.data.shape_keys:
+			return obj.data.shape_keys.key_blocks
+		else:
+			return []
+	
+	def get_view_mode( self ):
+		return self.context.scene.shape_keys_view_mode
+	
+	def set_view_mode( self, mode ):
+		context.scene.shape_keys_view_mode = mode.upper()
+	
+	def add_item_orig( self, **add_item_kwargs ):
+		# add_item_kwargs: from_mix = self.from_mix
+		bpy.ops.object.shape_key_add(**add_item_kwargs)
+	
+	def remove_item_orig( self, **remove_item_kwargs ):
+		bpy.ops.object.shape_key_remove( **remove_item_kwargs )
+	
+	def move_item_orig( self, **move_item_kwargs ):
+		# move_item_kwargs: type = self.type
+		if 'direction' in move_item_kwargs:
+			move_item_kwargs['type'] = move_item_kwargs.pop('direction')
+		bpy.ops.object.shape_key_move( **move_item_kwargs )
 
-	@classmethod
-	def poll(cls, context):
-		engine = context.scene.render.engine
-		return context.mesh and (engine in cls.COMPAT_ENGINES)
+	def filter_view_mode( self, indexes, selected ):
+		# Filter "ALL" label by view mode
+		view_mode = self.get_view_mode()
+		items = self.get_items()
+		if view_mode == 'VISIBLE':
+			indexes = [i for i in indexes if not items[i].mute]
+			selected = [i for i in selected if i in indexes]
+		elif view_mode == 'HIDDEN':
+			indexes = [i for i in indexes if items[i].mute]
+			selected = [i for i in selected if i in indexes]
 
+		return indexes, selected
+
+	def toggle_visible_item( self, inverse = False ):
+		items = self.get_items()
+		
+		indexes, selected = self.get_visible_item_indexes()
+		
+		if inverse:
+			# Hide or show all
+			if any(1 for i in indexes if items[i].mute):
+				for i in indexes:
+					items[i].mute = False
+			else:
+				for i in indexes:
+					items[i].mute = True
+		else:
+			# Inverse Visible
+			for i in indexes:
+				items[i].mute = not items[i].mute
 
 '''----------------------------------------------------------------------------
                             Label Helpers
@@ -189,10 +255,11 @@ class ShapeKeyCreateCorrective(bpy.types.Operator):
 	
 	def execute(self, context):
 		# Gather data
+		
 		obj = context.active_object
 		mesh = obj.data
 		active = obj.active_shape_key_index
-		sel = get_visible_indexes(context)[1]
+		sel = Advanced_Shape_Key_Labels( context ).get_visible_item_indexes()[1]
 		sel.sort()
 		if active not in sel:
 			active = sel.pop(-1)
@@ -242,12 +309,13 @@ class ShapeKeyAxis(bpy.types.Operator):
 	
 	def execute(self, context):
 		obj = context.active_object
-		shape_keys = obj.data.shape_keys.key_blocks
+		label_accessor = Advanced_Shape_Key_Labels( context )
+		shape_keys = label_accessor.get_items()
 		
 		# Initialize.  Isn't there a function for this?  Maybe that's only for modal operators.
 		if self.invoked:
 			# Gather data
-			indexes, self.selected = get_visible_indexes(context)
+			indexes, self.selected = label_accessor.get_visible_item_indexes()
 			
 			# Get offsets
 			self.offsets = []			
@@ -291,8 +359,9 @@ class ToggleShapeKey(bpy.types.Operator):
 	
 	def execute(self, context):
 		obj = context.active_object
-		indexes, selected = get_visible_indexes(context)
-		shape_keys = obj.data.shape_keys.key_blocks
+		label_accessor = Advanced_Shape_Key_Labels( context )
+		indexes, selected = label_accessor.get_visible_item_indexes( )
+		shape_keys = label_accessor.get_items()
 
 		if selected:
 			if not self.shift or len(selected) == 1:
@@ -333,8 +402,9 @@ class NegateShapeKey(bpy.types.Operator):
 	def execute(self, context):
 		# Data Gathering
 		obj = context.active_object
-		indexes, selected = get_visible_indexes(context)
-		shape_keys = obj.data.shape_keys.key_blocks
+		label_accessor = Advanced_Shape_Key_Labels( context )
+		indexes, selected = label_accessor.get_visible_item_indexes( )
+		shape_keys = label_accessor.get_items()
 		
 		# Operate on selected
 		if self.selected:
@@ -375,9 +445,10 @@ class ShapeKeyCopy(bpy.types.Operator):
 	def execute(self, context):
 		# Data gathering
 		obj = context.object
-		shape_keys = obj.data.shape_keys.key_blocks
 		active_index = obj.active_shape_key_index
-		indexes, selected = get_visible_indexes(context)
+		label_accessor = Advanced_Shape_Key_Labels( context )
+		indexes, selected = label_accessor.get_visible_item_indexes( )
+		shape_keys = label_accessor.get_items()
 		
 		if not self.selected:
 			# Do add_to_label, with from mix = True
@@ -450,17 +521,15 @@ class ShapeKeyScrubTwo(bpy.types.Operator):
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True, test_mode = False)
 	
-	def execute(self, context):
-		obj = context.object
-		mesh = obj.data
-		index = obj.active_shape_key_label_index
-		
+	def execute(self, context):		
 		# Get indexes of visible keys
-		indexes, sel = get_visible_indexes(context)
+		label_accessor = Advanced_Shape_Key_Labels( context )
+		indexes, selected = label_accessor.get_visible_item_indexes( )
 		
-		if len(sel) == 2:
-			mesh.shape_keys.key_blocks[sel[0]].value = self.percent
-			mesh.shape_keys.key_blocks[sel[1]].value = 1.0 - self.percent
+		if len(selected) == 2:
+			shape_keys = label_accessor.get_items()
+			shape_keys[sel[0]].value = self.percent
+			shape_keys[sel[1]].value = 1.0 - self.percent
 		return {'FINISHED'}
 
 '''----------------------------------------------------------------------------
@@ -478,25 +547,7 @@ class ShapeKeyLabelAdd(bpy.types.Operator):
 		return label_poll(context, test_mode = False)
 	
 	def execute(self, context):
-		obj = context.object
-		mesh = obj.data
-		keys = mesh.shape_key_labels.keys()
-		label = mesh.shape_key_labels.add()
-		
-		if not keys:
-			label.name = "All"
-			if obj.data.shape_keys:
-				num_keys = len(obj.data.shape_keys.key_blocks)
-			else:
-				num_keys = 0
-			format_label_name( label, num_keys)
-		else:
-			label.name = "Label %d" % len(keys)
-			format_label_name( label )
-		
-		index = len( mesh.shape_key_labels.keys() ) - 1
-		obj.active_shape_key_label_index = index
-
+		Advanced_Shape_Key_Labels( context ).add( )
 		return {'FINISHED'} 
 
 class ShapeKeyLabelRemove(bpy.types.Operator):
@@ -510,14 +561,7 @@ class ShapeKeyLabelRemove(bpy.types.Operator):
 		return label_poll(context, test_mode = False)
 	
 	def execute(self, context):
-		obj = context.object
-		mesh = obj.data
-		keys = mesh.shape_key_labels.keys()
-		index = obj.active_shape_key_label_index
-		
-		if keys and (index != 0 or len(keys) == 1):
-			mesh.shape_key_labels.remove(index)
-			obj.active_shape_key_label_index = min(len(keys) - 2, index)
+		Advanced_Shape_Key_Labels( context ).remove( )
 		return {'FINISHED'} 
 
 class ShapeKeyLabelMove(bpy.types.Operator):
@@ -539,23 +583,7 @@ class ShapeKeyLabelMove(bpy.types.Operator):
 		return label_poll(context, test_mode = False)
 	
 	def execute(self, context):
-		# Gather data
-		obj = context.object
-		mesh = obj.data
-		keys = mesh.shape_key_labels.keys()
-		index = obj.active_shape_key_label_index
-		labels = mesh.shape_key_labels
-		
-		# Check for labels.  Don't move special label "ALL".
-		if keys and index > 0:
-			if self.type == 'UP':
-				if index - 1 > 0:
-					labels.move(index, index - 1)
-					obj.active_shape_key_label_index -= 1
-			else:
-				if index + 1 < len(keys):
-					labels.move(index, index + 1)
-					obj.active_shape_key_label_index += 1
+		Advanced_Shape_Key_Labels( context ).move( direction = self.type )
 		return {'FINISHED'} 
 
 class ShapeKeySetIndex(bpy.types.Operator):
@@ -579,30 +607,7 @@ class ShapeKeySetIndex(bpy.types.Operator):
 		return self.execute(context)
 	
 	def execute(self, context):
-		if self.index > -1:
-			obj = context.object
-			sel = obj.selected_shape_keys
-			if not self.shift:
-				# Clear selected if shift isn't used
-				for x in range(len(sel)):
-					sel.remove(0)
-			else:
-				for x, key in enumerate(sel):
-					if self.index == key.index:
-						if obj.active_shape_key_index == self.index:
-							if len(sel) > 1:
-								sel.remove(x)
-								obj.active_shape_key_index = sel[-1].index
-						else:
-							sel.remove(x)
-						return {'FINISHED'}
-			# Set active
-			obj.active_shape_key_index = self.index
-			
-			# Add to selected
-			i = obj.selected_shape_keys.add()
-			i.index = self.index
-
+		Advanced_Shape_Key_Labels( context ).select_item( self.index, self.shift )
 		return {'FINISHED'}
 	
 class ShapeKeyCopyToLabel(bpy.types.Operator):
@@ -621,28 +626,9 @@ class ShapeKeyCopyToLabel(bpy.types.Operator):
 		pass
 	
 	def execute(self, context):
-		obj = context.object
-		mesh = obj.data
-		label = mesh.shape_key_labels[self.index]
-		
-		# Get indexes
-		label_indexes = [i.index for i in label.indexes]
-		selected = get_visible_indexes( context )[1]
-
-		# Only add indexes that aren't already in that label
-		add_indexes = []
-		for i in selected:
-			if i not in label_indexes:
-				add_indexes.append(i)
-		
-		# Add 'em
-		for i in add_indexes:
-			indexes = label.indexes.add()
-			indexes.index = i
-		
-		if add_indexes:
-			self.report({'INFO'}, "Copied to %s" % strip_label_number(label))
-			format_label_name(label)
+		copied_to = Advanced_Shape_Key_Labels( context ).copy_item( self.index )
+		if copied_to is not None:
+			self.report({'INFO'}, "Copied to %s" % copied_to)
 		return {'FINISHED'}
 
 class ShapeKeyAddToLabel(bpy.types.Operator):
@@ -663,32 +649,7 @@ class ShapeKeyAddToLabel(bpy.types.Operator):
 		pass
 	
 	def execute(self, context):
-		obj = context.object
-		mesh = obj.data
-		index = obj.active_shape_key_label_index
-		labels =  mesh.shape_key_labels
-		bpy.ops.object.shape_key_add(from_mix = self.from_mix)
-		
-		# Add to current label if on is selected.
-		if index > 0:
-			label = labels[index]
-			label_index = label.indexes.add()
-			label_index.index = obj.active_shape_key_index
-			format_label_name(label)
-		
-		# Update "All" Label
-		if labels:
-			num_keys = 0
-			if mesh.shape_keys:
-				num_keys = len(mesh.shape_keys.key_blocks)
-			format_label_name(labels[0], num_keys)
-		
-		# Update selected
-		for x in range(len(obj.selected_shape_keys)):
-			obj.selected_shape_keys.remove(0)
-		selected_index = obj.selected_shape_keys.add()
-		selected_index.index = obj.active_shape_key_index
-		
+		Advanced_Shape_Key_Labels( context ).add_item( )
 		return {'FINISHED'}
 
 class ShapeKeyRemoveFromLabel(bpy.types.Operator):
@@ -711,18 +672,7 @@ class ShapeKeyRemoveFromLabel(bpy.types.Operator):
 		pass
 	
 	def execute(self, context):
-		obj = context.object
-		mesh = obj.data
-		index = obj.active_shape_key_label_index
-		if index > 0:
-			label = mesh.shape_key_labels[index]			
-			
-			# get selected
-			sel = get_visible_indexes( context )[1]
-			sel.sort()
-			sel.reverse()
-			for i in sel:
-				remove_shape_index_from_label( i, label )
+		Advanced_Shape_Key_Labels( context ).remove_item( )
 		return {'FINISHED'}
 
 class ShapeKeyDelete(bpy.types.Operator):
@@ -738,54 +688,8 @@ class ShapeKeyDelete(bpy.types.Operator):
 	def draw(self, context):
 		pass
 
-	def delete_active_shape_key(self, obj):
-		mesh = obj.data
-		shape_index = obj.active_shape_key_index
-		bpy.ops.object.shape_key_remove()
-		
-		if mesh.shape_key_labels:
-			# Update "All" Label
-			if obj.data.shape_keys:
-				num_keys = len(obj.data.shape_keys.key_blocks)
-			else:
-				num_keys = 0
-			format_label_name( mesh.shape_key_labels[0], num_keys)
-			
-			# Update other labels
-			if len(obj.data.shape_key_labels) > 1:
-				for x in range(1, len(mesh.shape_key_labels)):
-					remove_shape_index_from_label(shape_index, mesh.shape_key_labels[x])
-				
-				# Correct the moved index in every label (except the first label, All)
-				for x in range(1, len(obj.data.shape_key_labels)):
-					label_indexes = obj.data.shape_key_labels[x].indexes
-					for label_index in label_indexes:
-						if label_index.index >= shape_index:
-							label_index.index -= 1
-			
 	def execute(self, context):
-		obj = context.object
-		mesh = obj.data
-		
-		# Delete selected
-		sel = get_visible_indexes( context )[1]
-		if sel:
-			sel.sort()
-			sel.reverse()
-			for i in sel:
-				obj.active_shape_key_index = i
-				self.delete_active_shape_key(obj)
-			
-			# Update active index
-			if mesh.shape_keys and len(mesh.shape_keys.key_blocks) > obj.active_shape_key_index + 1:
-				obj.active_shape_key_index += 1
-			
-			# Update selected
-			for sel in obj.selected_shape_keys:
-				obj.selected_shape_keys.remove(0)
-			s = obj.selected_shape_keys.add()
-			s.index = obj.active_shape_key_index
-		
+		Advanced_Shape_Key_Labels( context ).delete_item( )
 		return {'FINISHED'}
 
 class ShapeKeyMoveInLabel(bpy.types.Operator):
@@ -807,101 +711,7 @@ class ShapeKeyMoveInLabel(bpy.types.Operator):
 		return label_poll(context, test_shapes = True, test_mode = False)
 	
 	def execute(self, context):
-		obj = context.object
-		mesh = obj.data
-		index = obj.active_shape_key_label_index
-		
-		# Get indexes of visible keys
-		indexes, sel = get_visible_indexes(context)
-		
-		# If it's a real label
-		if index > 0:
-			# I'm sure there's a better way to do this.
-			
-			# Do everything in reverse if going down
-			if self.type == 'DOWN':
-				indexes.reverse()
-			
-			# Indexes of selected keys
-			pos = [indexes.index(i) for i in sel]
-			pos.sort()
-			
-			# Indexes are in order, beginning at 0, and therefore at the start of the list
-			# and can be skipped
-			if pos == list(range(len(pos))):
-				return {'FINISHED'}
-
-			# Move selections that are at the beginning of the list out of the operation.
-			new_indexes = []
-			while pos and pos[0] == 0:
-				new_indexes.append(indexes.pop(0))
-				pos = [pos[y] - 1 for y in range(1, len(pos))]
-			
-			# The main logic I'm using.  I really wish this whole thing was better.
-			delayed = []			
-			for x, i in enumerate(indexes):
-				if x + 1 in pos:
-					new_indexes.append(indexes[x + 1])
-					delayed.append(i)
-				else:
-					for y in reversed(range(len(delayed))):
-						d = delayed.pop(y)
-						if d not in new_indexes:
-							new_indexes.append(d)
-					if i not in new_indexes:
-						new_indexes.append(i)
-			
-			# Restore direction
-			if self.type == 'DOWN':
-				new_indexes.reverse()
-			
-			# Apply changes
-			for x, i in enumerate(new_indexes):
-				obj.data.shape_key_labels[index].indexes[x].index = i			
-		else:
-			# Sort visible
-			sel.sort()
-			
-			# Reverse it if going down to help with clashes
-			if self.type == 'DOWN':
-				sel.reverse()
-			
-			key_index = obj.active_shape_key_index
-			new_key_index = -1
-			increment = -1
-			if self.type == 'DOWN':
-				increment = 1
-			
-			for x, i in enumerate(sel):
-				# Only move down if it won't run into another selected item
-				if (i + increment) not in sel:
-					# Set active index, move shape key
-					obj.active_shape_key_index = i
-					bpy.ops.object.shape_key_move(type = self.type)
-					new_index = obj.active_shape_key_index
-					
-					# Update actual selection
-					obj.selected_shape_keys[x].index = new_index
-					
-					# Update selected items, so item clashes resolve correctly
-					sel[x] = new_index
-					
-					# Save active_index, so it can be restored correctly later
-					if i == key_index:
-						new_key_index = new_index
-					
-					# Correct the moved index in every label (except the first label, All)
-					if obj.data.shape_key_labels and len(obj.data.shape_key_labels) > 1:
-						for y in range(1, len(obj.data.shape_key_labels)):
-							label_indexes = obj.data.shape_key_labels[y].indexes
-							for label_index in label_indexes:
-								if label_index.index == i:
-									label_index.index = new_index
-								elif label_index.index == new_index:
-									label_index.index = i
-			# Restore active_index			
-			if new_key_index > -1:
-				obj.active_shape_key_index = new_key_index
+		Advanced_Shape_Key_Labels( context ).move_item( direction = self.type )
 		return {'FINISHED'}
 
 class ShapeKeyToggleSelected(bpy.types.Operator):
@@ -924,37 +734,7 @@ class ShapeKeyToggleSelected(bpy.types.Operator):
 		return self.execute(context)
 	
 	def execute(self, context):
-		obj = context.object
-		
-		actual_indexes, actual_selected = get_visible_indexes(context, skip_view_mode_filter = True)
-		
-		# Clean selected
-		for x in range(len(obj.selected_shape_keys)):
-			obj.selected_shape_keys.remove(0)
-		
-		if not self.shift:
-			# Select or de-select all
-			if len(actual_selected) >= 0 and len(actual_selected) != len(actual_indexes):
-				for i in actual_indexes:
-					index = obj.selected_shape_keys.add()
-					index.index = i
-		else:
-			# Inverse selection
-			actual_selected = set(actual_selected)
-			for i in actual_indexes:
-				if i not in actual_selected:
-					index = obj.selected_shape_keys.add()
-					index.index = i
-		
-		# Correct active index.  Correct for 0 selected.
-		selected = [i.index for i in obj.selected_shape_keys]
-		if selected:
-			if obj.active_shape_key_index not in selected:
-				obj.active_shape_key_index = selected[-1]
-		else:
-			obj.active_shape_key_index = 0
-			index = obj.selected_shape_keys.add()
-			index.index = 0
+		Advanced_Shape_Key_Labels( context ).toggle_selected_item( inverse = not self.shift )
 		return {'FINISHED'}
 		
 class ShapeKeyToggleVisible(bpy.types.Operator):
@@ -978,24 +758,7 @@ class ShapeKeyToggleVisible(bpy.types.Operator):
 		return self.execute(context)
 	
 	def execute(self, context):
-		obj = context.object
-		keys = obj.data.shape_keys.key_blocks
-		
-		indexes, selected = get_visible_indexes(context)
-		
-		if not self.shift:
-			# Hide or show all
-			if any(1 for i in indexes if keys[i].mute):
-				for i in indexes:
-					keys[i].mute = False
-			else:
-				for i in indexes:
-					keys[i].mute = True
-		else:
-			# Inverse Visible
-			for i in indexes:
-				keys[i].mute = not keys[i].mute
-		
+		Advanced_Shape_Key_Labels( context ).toggle_visible_item( inverse = not self.shift )
 		return {'FINISHED'}
 
 class MESH_MT_shape_key_view_mode(Menu):
@@ -1048,6 +811,9 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		layout = self.layout
 
 		ob = context.object
+		label_accessor = Advanced_Shape_Key_Labels( context )
+		indexes, selected = label_accessor.get_visible_item_indexes( )
+		shape_keys = label_accessor.get_items()
 		key = ob.data.shape_keys
 		kb = ob.active_shape_key
 	
@@ -1101,7 +867,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 			
 		side_col.menu("MESH_MT_shape_key_specials", icon = 'DOWNARROW_HLT', text = "")
 		#shape_key_add_to_label
-		if key:
+		if shape_keys:
 			row = box.row()
 			
 			##########################
@@ -1132,11 +898,11 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 					icon = 'PROP_CON'
 				row.operator("object.shape_key_set_index", icon = icon, text = '').index = i
 				
-				row.prop(ob.data.shape_keys.key_blocks[i], 'name', text = '')
+				row.prop(shape_keys[i], 'name', text = '')
 				row = row.split(percentage = 0.85)
-				row.prop(ob.data.shape_keys.key_blocks[i], 'value', text = '')
+				row.prop(shape_keys[i], 'value', text = '')
 				row = row.split()
-				row.prop(ob.data.shape_keys.key_blocks[i], 'mute', text = '')
+				row.prop(shape_keys[i], 'mute', text = '')
 			
 			##########################
 			# SHAPE KEYS BOTTOM ROW TOGGLES
@@ -1233,32 +999,21 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		row = box.row(align = True)
 		
 def label_index_updated(self, context):
-	obj = context.object
-	
-	if obj.data.shape_key_labels and \
-		context.scene.shape_keys_view_mode == 'UNLABELED' and \
-		obj.active_shape_key_label_index != 0:
-		
-		context.scene.shape_keys_view_mode = 'ALL'
+	Advanced_Shape_Key_Labels( context ).label_index_updated()
 	
 def shape_key_specials(self, context):
 	self.layout.operator("object.shape_key_create_corrective", 
 		text = "Create Corrective Driver", 
 		icon = 'LINK_AREA')
 
-# Define Shape Key Label collection to be put on mesh object.
-class IndexProperty(bpy.types.PropertyGroup):
-	index = bpy.props.IntProperty( default = -1)
-
-class IndexCollection(bpy.types.PropertyGroup):
-	indexes = bpy.props.CollectionProperty(type = IndexProperty)
-	#name = bpy.props.StringProperty(name = "Label Name", default = "Default")
-	
 old_shape_key_menu = None
 def register():
 	# Register collections
-	bpy.utils.register_class(IndexProperty)
-	bpy.utils.register_class(IndexCollection)
+	try:
+		bpy.utils.register_class(IndexProperty)
+		bpy.utils.register_class(IndexCollection)
+	except:
+		pass
 
 	# Add rna for Mesh object, to store label names and corresponding indexes.
 	bpy.types.Mesh.shape_key_labels = bpy.props.CollectionProperty(type = IndexCollection)
