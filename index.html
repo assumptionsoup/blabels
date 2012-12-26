@@ -28,13 +28,13 @@
         </ul>
       </header>
       <section>
-        <p><img src="advanced_shape_keys_breakdown.gif" alt="Advanced Shape Key Panel Breakdown"><strong>Advanced Shape Key Panel</strong> adds the ability to sort shape keys into labels Blender.  It also adds a number of shape-key related functions that I found useful.  It is part of a series of scripts I've written as I've started to learn and use Blender for my personal projects.  Advanced Shape Key Panel is released under GPL v3.0 and is intended for Blender 2.63.</p>
+        <p><img src="advanced_shape_keys_breakdown.gif" alt="Advanced Shape Key Panel Breakdown"><strong>Advanced Shape Key Panel</strong> adds the ability to sort shape keys and vertex groups into labels Blender.  It also adds a number of shape-key related functions that I found useful.  It is part of a series of scripts I've written as I've started to learn and use Blender for my personal projects.  Advanced Shape Key Panel is released under GPL v3.0 and is intended for Blender 2.63.</p>
 
-<hr><p>Advanced Shape Key Panel replaces the default shape key panel.  You can find it in Properties -&gt; Object Data.</p>
+<hr><p>Advanced Shape Key Panel replaces the default shape key and vertex group panels.  You can find them in Properties -&gt; Object Data.</p>
 
-<hr><p>To Install Advanced Shape Key Panel follow the normal procedure with installing addons.</p>
+<hr><p>To Install Advanced Shape Key Panel copy the entire source folder into the blender scripts/addon directory.</p>
 
-<p>For those unfamiliar with this process, open the Blender User Preferences (Ctrl + Alt + U).  Go to the Addons tab.  Click the Install Addon button, browse to where you downloaded the addon and select the python file.  Make sure that the "Testing" category is selected under Supported Level.  Type the name of the addon into the search box, and click on the enable addon checkbox.</p>
+<p>On Windows this directory is usually at %userprofile%\AppData\Roaming\Blender Foundation\Blender\2.63\scripts\addons unless it was changed in the user preferences.</p>
 
 <hr><p>I'm currently using Blender to create a small short film.  I'm still learning Blender, and it's largely a linear process as I learn what I need to accomplish for each stage in my personal production.  There are large gaping holes in my current knowledge of how to use Blender.  Because of this, the scripts I'm releasing now are all in the "Testing" stage.  It is very likely that they will have bugs related to my lack of current knowledge.  Even worse, these scripts could be implementing a feature that already exists!</p>
 
@@ -49,18 +49,17 @@
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
-	  <script src="javascripts/scale.fix.js"></script>
-	  <script type="text/javascript">
-		  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-		  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-	  </script>
-	  <script type="text/javascript">
-		  try {
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
               var pageTracker = _gat._getTracker("UA-34040064-1");
-			  pageTracker._trackPageview();
-		  } catch(err) {}
-	  </script>
-	  
-    
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
   </body>
 </html>
