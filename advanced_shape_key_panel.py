@@ -41,7 +41,7 @@ bl_info = {
     "category": "Rigging"
 }
 
-class Advanced_Shape_Key_Labels( Advanced_Labels):
+class Advanced_Shape_Key_Labels( Advanced_Labels ):
 	@property
 	def labels( self ):
 		return self.context.object.data.shape_key_labels
@@ -111,7 +111,7 @@ class Advanced_Shape_Key_Labels( Advanced_Labels):
 	def toggle_visible_item( self, inverse = False ):
 		items = self.items
 		
-		indexes, selected = self.get_visible_item_indexes()
+		indexes = self.get_visible_item_indexes()[0]
 		
 		if inverse:
 			# Hide or show all
@@ -144,87 +144,6 @@ def label_poll(context, test_shapes = False, test_mode = True):
 		return obj.data.shape_keys
 	
 	return True
-	
-def strip_label_number(label):
-	# Remove numbers from label name and return it
-	name = label.name
-	name = name.split("(")[0]
-	return name.strip()
-	
-def format_label_name(label, num_items = None):
-	''' Updates the label name with the number of items in the label if no
-	overriding number is given. '''
-	name = strip_label_number(label)
-	if num_items is None:
-		num_items = len(label.indexes)
-	label.name = "{:<20}({})".format(name, num_items)
-
-def get_visible_selection(obj, indexes):
-	# Get selected
-	selected = [i.index for i in obj.selected_shape_keys]
-	if not selected:
-		selected = [obj.active_shape_key_index]
-	selected = set(selected)
-	
-	return [i for i in indexes if i in selected]
-
-def get_visible_indexes(context, skip_view_mode_filter = False):
-	# Get visible shape key indexes
-	obj = context.object
-	labels = obj.data.shape_key_labels
-	index = obj.active_shape_key_label_index
-	keys = obj.data.shape_keys
-	indexes = []
-	
-	if index != 0 and labels and len(labels):
-		# Invalid State Check (only fixes out of range states)
-		key_indexes = obj.data.shape_key_labels[index].indexes
-		for x in reversed(range(len(key_indexes))):
-			if key_indexes[x].index >= len(keys.key_blocks):
-				key_indexes.remove(x)
-		
-		# Find indexes in label
-		indexes = [i.index for i in key_indexes if i.index > -1]
-	else:
-		if keys:
-			indexes = [i for i in range(len(keys.key_blocks))]
-		else:
-			indexes = []
-	
-	selected = []
-	if indexes:
-		selected = get_visible_selection(obj, indexes)
-		if not skip_view_mode_filter:			
-			# Filter "ALL" label by view mode
-			if context.scene.shape_keys_view_mode == 'SELECTED':
-				indexes = selected[:]
-			
-			if context.scene.shape_keys_view_mode == 'VISIBLE':
-				indexes = [i for i in indexes if not keys.key_blocks[i].mute]
-				selected = [i for i in selected if i in indexes]
-			if context.scene.shape_keys_view_mode == 'HIDDEN':
-				indexes = [i for i in indexes if keys.key_blocks[i].mute]
-				selected = [i for i in selected if i in indexes]
-			
-			if context.scene.shape_keys_view_mode == 'UNLABELED':
-				indexes_set = set(indexes)
-				for label in labels:
-					for label_indexes in label.indexes:
-						if label_indexes.index in indexes_set:
-							indexes_set.remove(label_indexes.index)
-				indexes = [i for i in indexes if i in indexes_set]
-				selected = [i for i in selected if i in indexes]
-	
-	return indexes, selected
-
-
-def remove_shape_index_from_label( index, label ):
-	for x, i in enumerate(label.indexes):
-		if index == i.index:
-			label.indexes.remove(x)
-			format_label_name( label )
-			break
-
 
 '''----------------------------------------------------------------------------
                             Shape Key Operators
@@ -473,7 +392,7 @@ class ShapeKeyCopy(bpy.types.Operator):
 		obj = context.object
 		active_index = obj.active_shape_key_index
 		label_accessor = Advanced_Shape_Key_Labels( context )
-		indexes, selected = label_accessor.get_visible_item_indexes( )
+		indexes, selected = label_accessor.get_visible_item_indexes()
 		shape_keys = label_accessor.items
 		
 		if not self.selected:
@@ -550,12 +469,12 @@ class ShapeKeyScrubTwo(bpy.types.Operator):
 	def execute(self, context):		
 		# Get indexes of visible keys
 		label_accessor = Advanced_Shape_Key_Labels( context )
-		indexes, selected = label_accessor.get_visible_item_indexes( )
+		selected = label_accessor.get_visible_item_indexes( )[-1]
 		
 		if len(selected) == 2:
 			shape_keys = label_accessor.items
-			shape_keys[sel[0]].value = self.percent
-			shape_keys[sel[1]].value = 1.0 - self.percent
+			shape_keys[selected[0]].value = self.percent
+			shape_keys[selected[1]].value = 1.0 - self.percent
 		return {'FINISHED'}
 
 '''----------------------------------------------------------------------------
@@ -881,7 +800,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 		side_col.operator("object.shape_key_remove_from_label", icon = 'ZOOMOUT', text = "")
 		side_col.operator("object.shape_key_delete", icon = 'PANEL_CLOSE', text = "")
 		
-		indexes, selected = get_visible_indexes( context)
+		indexes, selected = label_accessor.get_visible_item_indexes()
 		
 		if indexes:
 			side_col.operator("object.shape_key_toggle", icon = 'RESTRICT_VIEW_OFF', text = '')

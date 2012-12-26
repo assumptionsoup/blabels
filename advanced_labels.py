@@ -86,13 +86,15 @@ class Advanced_Labels( object ):
 		raise NotImplementedError
 	
 	def add_item_orig( self, **add_item_kwargs ):
-		# Original call to add the item
+		# Original call to add item
 		raise NotImplementedError
 	
 	def remove_item_orig( self, **remove_item_kwargs ):
+		# Original call to remove item
 		raise NotImplementedError
 	
 	def move_item_orig( self, *move_item_kwargs ):
+		# Original call to move item
 		raise NotImplementedError
 		
 	# END of functiones that need overrides to work.
@@ -180,15 +182,12 @@ class Advanced_Labels( object ):
 		selected = set(selected)
 		
 		return [i for i in indexes if i in selected]
-	
-	def filter_view_mode( self, indexes, selected ):
-		return indexes, selected
-	
+
 	def get_visible_item_indexes( self, skip_view_mode_filter = False ):
 		# Get visible shape key indexes
 		labels = self.labels
-		index = self.active_index
 		items = self.items
+		index = self.active_index
 		indexes = []
 		
 		if index != 0 and labels and len(labels):
@@ -217,21 +216,24 @@ class Advanced_Labels( object ):
 						for label_indexes in label.indexes:
 							if label_indexes.index in indexes_set:
 								indexes_set.remove(label_indexes.index)
+							if not indexes_set:
+								break
+						if not indexes_set:
+							break
 					indexes = [i for i in indexes if i in indexes_set]
 					selected = [i for i in selected if i in indexes]
 				else:
 					indexes, selected = self.filter_view_mode( indexes, selected )
-		
 		return indexes, selected
 	
-	def copy_item( self, label_index ): #copy_to_label(self):
+	def copy_item( self, label_index ):
 		''' Copies selected items to the given label index.
 		Returns True if an item was added. '''
 		label = self.labels[label_index]
 		
 		# Get indexes
 		item_indexes = [i.index for i in label.indexes]
-		selected = self.get_visible_item_indexes( )[1]
+		selected = self.get_visible_item_indexes()[1]
 
 		# Only add indexes that aren't already in that label
 		added_indexes = False
@@ -248,7 +250,7 @@ class Advanced_Labels( object ):
 			return strip_label_number(label)
 		return None
 		
-	def add_item( self, **add_items_kwargs ): #add_to_label(self):
+	def add_item( self, **add_items_kwargs ):
 		index = self.active_index
 		labels =  self.labels
 		
@@ -280,7 +282,7 @@ class Advanced_Labels( object ):
 				format_label_name( label )
 				break
 	
-	def remove_item( self ): #remove_from_label(self):
+	def remove_item( self ):
 		index = self.active_index
 		if index > 0:
 			label = self.labels[index]			
@@ -314,7 +316,7 @@ class Advanced_Labels( object ):
 						if label_index.index >= item_index:
 							label_index.index -= 1
 	
-	def delete_item( self ): #delete(self):
+	def delete_item( self ):
 		# Delete selected
 		sel = self.get_visible_item_indexes( )[1]
 		if sel:
