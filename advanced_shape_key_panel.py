@@ -24,7 +24,7 @@ of other shape key related operations.'''
 import bpy
 from mathutils import Vector
 from bpy.types import Menu, Panel
-from advanced_labels import *
+from .advanced_labels import *
 
 class Advanced_Shape_Key_Labels( Advanced_Labels ):
 	@property
@@ -964,11 +964,15 @@ def register():
 		)
 	
 	bpy.types.MESH_MT_shape_key_specials.append(shape_key_specials)
-
-	bpy.utils.register_module(__name__)
-
+	
+	# try:
+		# bpy.utils.register_module(__name__)
+	# except Exception as err:
+		# if not (err.args[0] and "defines no classes" in err.args[0]):
+			# raise
+	
 def unregister():
-	bpy.utils.unregister_module(__name__)
+	# bpy.utils.unregister_module(__name__)
 	bpy.utils.register_class(old_shape_key_menu)
 	bpy.types.MESH_MT_shape_key_specials.remove(shape_key_specials)
 	

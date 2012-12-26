@@ -20,10 +20,10 @@ if "bpy" in locals():
 	imp.reload(advanced_shape_key_panel)
 	imp.reload(advanced_vertex_group_panel)
 else:
-	import advanced_labels
-	import advanced_shape_key_panel
-	import advanced_vertex_group_panel
-
+	from . import advanced_labels
+	from . import advanced_shape_key_panel
+	from . import advanced_vertex_group_panel
+	
 import bpy
 
 def register():
@@ -34,13 +34,19 @@ def register():
 	# Register panel(s)
 	advanced_shape_key_panel.register()
 	advanced_vertex_group_panel.register()
-
-def unregister():
-	advanced_shape_key_panel.unregister()
-	advanced_vertex_group_panel.unregister()
 	
-	bpy.utils.unregister_class(advanced_labels.IndexProperty)
-	bpy.utils.unregister_class(advanced_labels.IndexCollection)
+	bpy.utils.register_module(__name__)
+	
+def unregister():
+	bpy.utils.unregister_module(__name__)
+	
+	# IndexProperty and IndexCollection are part of this module, so they
+	# are already unregistered in unregister_module.  They only needed to
+	# be registered explicitly, because they needed to be registered before
+	# specific panels.
+	
+	advanced_vertex_group_panel.unregister()
+	advanced_shape_key_panel.unregister()
 
 
 if __name__ == "__main__":

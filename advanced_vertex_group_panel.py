@@ -23,7 +23,7 @@ be forthcoming.'''
 
 import bpy
 from bpy.types import Menu, Panel
-from advanced_labels import *
+from .advanced_labels import *
 
 class Advanced_Vertex_Group_Labels( Advanced_Labels):
 	@property
@@ -539,10 +539,14 @@ def register():
 				),
 		)
 
-	bpy.utils.register_module(__name__)
+	# try:
+		# bpy.utils.register_module(__name__)
+	# except Exception as err:
+		# if not (err.args[0] and "defines no classes" in err.args[0]):
+			# raise
 
 def unregister():
-	bpy.utils.unregister_module(__name__)
+	# bpy.utils.unregister_module(__name__)
 	bpy.utils.register_class(old_vertex_group_menu)
 	
 	del bpy.types.Scene.vertex_group_view_mode
