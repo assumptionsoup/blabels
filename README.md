@@ -1,4 +1,4 @@
-**Advanced Shape Key Panel** adds the ability to sort shape keys and vertex groups into labels Blender.  It also adds a number of shape-key related functions that I found useful.  It is part of a series of scripts I've written as I've started to learn and use Blender for my personal projects.  Advanced Shape Key Panel is released under GPL v3.0 and is intended for Blender 2.63.
+**Advanced Shape Key Panel** adds the ability to sort shape keys and vertex groups into labels in Blender.  It also adds a number of shape-key related functions that I found useful.  It is part of a series of scripts I've written as I've started to learn and use Blender for my personal projects.  Advanced Shape Key Panel is released under GPL v3.0 and is intended for Blender 2.63.
 
 ***
 
