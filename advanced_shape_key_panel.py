@@ -26,21 +26,6 @@ from mathutils import Vector
 from bpy.types import Menu, Panel
 from advanced_labels import *
 
-bl_info = {
-    "name": "Advanced Shapekey Panel",
-    "author": "Jordan Hueckstaedt",
-    "version": (1, 1),
-    "blender": (2, 63, 0),
-    "location": "Properties > Shape Keys",
-    "warning": "", # used for warning icon and text in addons panel
-    "description": "Allows the user to group shape keys into labels.\
-	Also adds new functions for manipulating shape keys.",
-    "wiki_url": "",
-	"tracker_url": "",
-	"support": "TESTING",
-    "category": "Rigging"
-}
-
 class Advanced_Shape_Key_Labels( Advanced_Labels ):
 	@property
 	def labels( self ):
@@ -953,13 +938,7 @@ def shape_key_specials(self, context):
 
 old_shape_key_menu = None
 def register():
-	# Register collections
-	try:
-		bpy.utils.register_class(IndexProperty)
-		bpy.utils.register_class(IndexCollection)
-	except:
-		pass
-
+	
 	# Add rna for Mesh object, to store label names and corresponding indexes.
 	bpy.types.Mesh.shape_key_labels = bpy.props.CollectionProperty(type = IndexCollection)
 	bpy.types.Object.selected_shape_keys = bpy.props.CollectionProperty(type = IndexProperty)
@@ -989,8 +968,6 @@ def register():
 	bpy.utils.register_module(__name__)
 
 def unregister():
-	# bpy.utils.unregister_class(IndexProperty)
-	# bpy.utils.unregister_class(IndexCollection)
 	bpy.utils.unregister_module(__name__)
 	bpy.utils.register_class(old_shape_key_menu)
 	bpy.types.MESH_MT_shape_key_specials.remove(shape_key_specials)
