@@ -1,7 +1,7 @@
-''' Replaces the default shape key panel with an "Advanced" one.
+''' Replaces the default vertex group panel with an "Advanced" one.
 
-Adds the ability to sort shape keys by labels, in addition to a number
-of other shape key related operations.'''
+Adds the ability to sort vertex groups by labels.  Additional features may
+be forthcoming.'''
 
 '''
 *******************************************************************************
@@ -104,11 +104,6 @@ class Advanced_Vertex_Group_Labels( Advanced_Labels):
 			armature_groups = set(self.get_armature_groups())
 			indexes = [i for i in indexes if i in armature_groups]
 			selected = [i for i in selected if i in indexes]
-			# indexes = [i for i in indexes if i in armature_groups]
-			# selected = [i.index for i in self.selected_items]
-			# if not selected:
-				# selected = [self.active_item_index]
-			# selected = set([i for i in selected if i in indexes])
 		return indexes, selected
 		
 	def toggle_locked_item( self, inverse = False ):
@@ -217,10 +212,7 @@ class VertexGroupsSetIndex(bpy.types.Operator):
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True, test_mode = False)
-	
-	def draw(self, context):
-		pass
-	
+
 	def invoke(self, context, event):
 		self.shift = event.shift
 		return self.execute(context)
@@ -240,10 +232,7 @@ class VertexGroupsCopyToLabel(bpy.types.Operator):
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True)
-	
-	def draw(self, context):
-		pass
-	
+
 	def execute(self, context):
 		copied_to = Advanced_Vertex_Group_Labels( context ).copy_item( self.index )
 		if copied_to is not None:
@@ -259,10 +248,7 @@ class VertexGroupsAddToLabel(bpy.types.Operator):
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context)
-	
-	def draw(self, context):
-		pass
-	
+
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).add_item( )
 		return {'FINISHED'}
@@ -277,10 +263,7 @@ class VertexGroupsRemoveFromLabel(bpy.types.Operator):
 	def poll(cls, context):
 		obj = context.object
 		return label_poll(context, test_mode = False)
-	
-	def draw(self, context):
-		pass
-	
+
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).remove_item( )
 		return {'FINISHED'}
@@ -294,9 +277,6 @@ class VertexGroupsDelete(bpy.types.Operator):
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True)
-		
-	def draw(self, context):
-		pass
 
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).delete_item( )
@@ -335,10 +315,7 @@ class VertexGroupsToggleSelected(bpy.types.Operator):
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True, test_mode = False)
-	
-	def draw(self, context):
-		pass
-	
+
 	def invoke(self, context, event):
 		self.shift = event.shift
 		return self.execute(context)
@@ -358,9 +335,6 @@ class VertexGroupsToggleLocked(bpy.types.Operator):
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True, test_mode = False)
-	
-	def draw(self, context):
-		pass
 	
 	def invoke(self, context, event):
 		self.shift = event.shift
