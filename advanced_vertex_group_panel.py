@@ -29,47 +29,47 @@ class Advanced_Vertex_Group_Labels( Advanced_Labels):
 	@property
 	def labels( self ):
 		return self.context.object.vertex_group_labels
-	
+
 	@property
 	def selected_items( self ):
 		return self.context.object.selected_vertex_group
-	
+
 	@property
 	def active_index( self ):
 		return self.context.object.active_vertex_group_label_index
-	
+
 	@active_index.setter
 	def active_index( self, index ):
 		self.context.object.active_vertex_group_label_index = index
-	
+
 	@property
 	def active_item_index( self ):
 		return self.context.object.vertex_groups.active_index
-	
+
 	@active_item_index.setter
 	def active_item_index( self, index ):
 		self.context.object.vertex_groups.active_index = index
-	
+
 	@property
 	def items( self ):
 		obj = self.context.object
 		return obj.vertex_groups
-	
+
 	@property
 	def view_mode( self ):
 		return self.context.scene.vertex_group_view_mode
-	
+
 	@view_mode.setter
 	def view_mode( self, mode ):
 		context.scene.vertex_group_view_mode = mode.upper()
-	
+
 	def add_item_orig( self, **add_item_kwargs ):
 		# I don't believe vertex groups have an optional parameter here yet.
 		bpy.ops.object.vertex_group_add(**add_item_kwargs)
-	
+
 	def remove_item_orig( self, **remove_item_kwargs ):
 		bpy.ops.object.vertex_group_remove( **remove_item_kwargs )
-	
+
 	def move_item_orig( self, **move_item_kwargs ):
 		# move_item_kwargs: type = self.type
 		bpy.ops.object.vertex_groups.move( **move_item_kwargs )
@@ -89,7 +89,7 @@ class Advanced_Vertex_Group_Labels( Advanced_Labels):
 
 		# Get bone indexes
 		return [group.index for group in obj.vertex_groups if group.name in bones]
-		
+
 	def filter_view_mode( self, indexes, selected ):
 		# Filter "ALL" label by view mode
 		view_mode = self.view_mode
@@ -105,11 +105,11 @@ class Advanced_Vertex_Group_Labels( Advanced_Labels):
 			indexes = [i for i in indexes if i in armature_groups]
 			selected = [i for i in selected if i in indexes]
 		return indexes, selected
-		
+
 	def toggle_locked_item( self, inverse = False ):
 		items = self.items
 		indexes, selected = self.get_visible_item_indexes( )
-		
+
 		if inverse:
 			# Hide or show all
 			if any(1 for i in indexes if items[i].lock_weight):
@@ -144,10 +144,10 @@ def label_poll(context, test_shapes = False, test_mode = True):
 
 	if test_mode and context.mode == 'EDIT_MESH':
 		return False
-	
+
 	if test_shapes:
 		return obj.data.shape_keys
-	
+
 	return True
 
 class VertexGroupsLabelAdd(bpy.types.Operator):
@@ -155,35 +155,35 @@ class VertexGroupsLabelAdd(bpy.types.Operator):
 	bl_label = "Add Label"
 	bl_description = "Add Label"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_mode = False)
-	
+
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).add( )
-		return {'FINISHED'} 
+		return {'FINISHED'}
 
 class VertexGroupsLabelRemove(bpy.types.Operator):
 	bl_idname = "object.vertex_groups_label_remove"
 	bl_label = "Remove Label"
 	bl_description = "Remove Label"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_mode = False)
-	
+
 	def execute(self, context):
 		copied_to = Advanced_Vertex_Group_Labels( context ).remove( )
-		return {'FINISHED'} 
+		return {'FINISHED'}
 
 class VertexGroupsLabelMove(bpy.types.Operator):
 	bl_idname = "object.vertex_groups_label_move"
 	bl_label = "Move Label"
 	bl_description = "Move Label"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	direction = bpy.props.EnumProperty(
 		name="Move Label Direction",
 		items =	(('UP', "Up", "Up"),
@@ -191,24 +191,24 @@ class VertexGroupsLabelMove(bpy.types.Operator):
 				),
 		default = 'UP'
 		)
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_mode = False)
-	
+
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).move( direction = self.direction )
-		return {'FINISHED'} 
+		return {'FINISHED'}
 
 class VertexGroupsSetIndex(bpy.types.Operator):
 	bl_idname = "object.vertex_groups_set_index"
 	bl_label = "Set Active Vertex Groups"
 	bl_description = "Set Active Vertex Groups"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	index = bpy.props.IntProperty(default = -1)
 	shift = bpy.props.BoolProperty(default = False)
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True, test_mode = False)
@@ -216,19 +216,19 @@ class VertexGroupsSetIndex(bpy.types.Operator):
 	def invoke(self, context, event):
 		self.shift = event.shift
 		return self.execute(context)
-	
+
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).select_item( self.index, self.shift )
 		return {'FINISHED'}
-	
+
 class VertexGroupsCopyToLabel(bpy.types.Operator):
 	bl_idname = "object.vertex_groups_copy_to_label"
 	bl_label = "Copy To Label"
 	bl_description = "Copy To Label"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	index = bpy.props.IntProperty(default = -1)
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True)
@@ -244,7 +244,7 @@ class VertexGroupsAddToLabel(bpy.types.Operator):
 	bl_label = "Add to Label"
 	bl_description = "Add to Label"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context)
@@ -258,7 +258,7 @@ class VertexGroupsRemoveFromLabel(bpy.types.Operator):
 	bl_label = "Remove From Label"
 	bl_description = "Remove From Label"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	@classmethod
 	def poll(cls, context):
 		obj = context.object
@@ -273,7 +273,7 @@ class VertexGroupsDelete(bpy.types.Operator):
 	bl_label = "Delete Vertex Groups"
 	bl_description = "Delete Vertex Groups"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True)
@@ -287,7 +287,7 @@ class VertexGroupsMoveInLabel(bpy.types.Operator):
 	bl_label = "Move Vertex Groups"
 	bl_description = "Move Vertex Groups"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	direction = bpy.props.EnumProperty(
 		name="Move Vertex Groups Direction",
 		items =	(('UP', "Up", "Up"),
@@ -295,11 +295,11 @@ class VertexGroupsMoveInLabel(bpy.types.Operator):
 				),
 		default = 'UP'
 		)
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True, test_mode = False)
-	
+
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).move_item( direction = self.direction )
 		return {'FINISHED'}
@@ -309,9 +309,9 @@ class VertexGroupsToggleSelected(bpy.types.Operator):
 	bl_label = "Toggle Selected Vertex Groups"
 	bl_description = "Toggle Selected Vertex Groups"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	shift = bpy.props.BoolProperty(default = False)
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True, test_mode = False)
@@ -319,7 +319,7 @@ class VertexGroupsToggleSelected(bpy.types.Operator):
 	def invoke(self, context, event):
 		self.shift = event.shift
 		return self.execute(context)
-	
+
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).toggle_selected_item( inverse = not self.shift )
 		return {'FINISHED'}
@@ -329,17 +329,17 @@ class VertexGroupsToggleLocked(bpy.types.Operator):
 	bl_label = "Toggle Locked Vertex Groups"
 	bl_description = "Toggle Locked Vertex Groups"
 	bl_options = {'REGISTER', 'UNDO'}
-	
+
 	shift = bpy.props.BoolProperty(default = False)
-	
+
 	@classmethod
 	def poll(cls, context):
 		return label_poll(context, test_shapes = True, test_mode = False)
-	
+
 	def invoke(self, context, event):
 		self.shift = event.shift
 		return self.execute(context)
-	
+
 	def execute(self, context):
 		Advanced_Vertex_Group_Labels( context ).toggle_locked_item( inverse = not self.shift )
 		return {'FINISHED'}
@@ -353,7 +353,7 @@ class MESH_MT_vertex_group_view_mode(Menu):
 		for item in bpy.types.Scene.vertex_group_view_mode[1]['items']:
 			if item[0] == 'UNLABELED' and obj.vertex_group_labels and obj.active_vertex_group_label_index != 0:
 				continue
-				
+
 			if item[0] != context.scene.vertex_group_view_mode:
 				layout.prop_enum(context.scene, "vertex_group_view_mode", item[0])
 
@@ -390,27 +390,27 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 		layout.label("Labels")
 		row = layout.row()
 		row.template_list(ob, "vertex_group_labels", ob, "active_vertex_group_label_index", rows = 4) #
-	
+
 		col = row.column()
 		sub = col.column( align=True )
 		sub.operator("object.vertex_groups_label_add", icon = 'ZOOMIN', text="")
 		sub.operator("object.vertex_groups_label_remove", icon = 'ZOOMOUT', text="")
-		
-		
+
+
 		sub =  col.column()
 		sub.separator()
 		sub.scale_y = 4.9
-		
+
 		sub =  col.column(align=True)
 		sub.operator("object.vertex_groups_label_move", icon = 'TRIA_UP', text = "").direction = 'UP'
 		sub.operator("object.vertex_groups_label_move", icon = 'TRIA_DOWN', text = "").direction = 'DOWN'
-		
-	
+
+
 		labels = ob.vertex_group_labels
 		if labels:
 			row = layout.row()
 			row.prop(labels[ob.active_vertex_group_label_index], 'name')
-		
+
 		##########################
 		# SIDE COLUMN ICONS
 		row = layout.row()
@@ -421,26 +421,26 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 		side_col.operator("object.vertex_groups_add_to_label", icon = 'ZOOMIN', text = "")
 		side_col.operator("object.vertex_groups_remove_from_label", icon = 'ZOOMOUT', text = "")
 		side_col.operator("object.vertex_groups_delete", icon = 'PANEL_CLOSE', text = "")
-		
+
 		side_col.menu("MESH_MT_vertex_group_specials", icon = 'DOWNARROW_HLT', text = "")
 		indexes, selected = Advanced_Vertex_Group_Labels( context ).get_visible_item_indexes()
-		
+
 		if len(ob.vertex_groups):
 			row = box.row()
-			
+
 			##########################
 			# VIEW MODE / COPY TO
 			# Display view mode menu if "ALL" label is selected
 			menu_name = next(item[1] for item in bpy.types.Scene.vertex_group_view_mode[1]['items'] if context.scene.vertex_group_view_mode == item[0])
 			row.menu("MESH_MT_vertex_group_view_mode", text = menu_name)
 			row = row.split()
-			
+
 			row.label("Groups")
-			
-			if ob.vertex_group_labels and len(ob.vertex_group_labels) > 1:	
+
+			if ob.vertex_group_labels and len(ob.vertex_group_labels) > 1:
 				row = row.split()
 				row.menu("MESH_MT_vertex_groups_copy_to_label", text = "Copy to Label")
-		
+
 		if indexes:
 			##########################
 			# VERTEX GROUP ITEMS
@@ -456,12 +456,12 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 				row.operator("object.vertex_groups_set_index", icon = icon, text = '').index = i
 				row = row.split(percentage = .89)
 				row.prop(ob.vertex_groups[i], 'name', text = '')
-				
+
 				icon = 'UNLOCKED'
 				if ob.vertex_groups[i].lock_weight:
 					icon = 'LOCKED'
 				row.prop(ob.vertex_groups[i], 'lock_weight', icon =  icon, text = '')
-				
+
 			##########################
 			# VERTEX GROUP BOTTOM ROW TOGGLES
 
@@ -469,20 +469,20 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 			row.scale_y = 0.8
 			row = row.split(percentage = 0.10, align = True)
 			row.operator("object.vertex_groups_toggle_selected", icon = 'PROP_ON', text = '')
-			
+
 			row = row.split(percentage = 0.91, align = True)
 			row.label('')
-			
+
 			row.operator("object.vertex_groups_toggle_locked", icon = 'UNLOCKED', text = '') #.absolute = True
-			
+
 			##########################
 			# SIDE COLUMN BOTTOM ICONS
-			
+
 			# A trip to photoshop gave me this.
 			# However, this may break cross platform due to differences in icon size
 			# A better solution would be a way to attach columns to the bottom of another element
 			# But I don't believe this is possible with the current API
-			
+
 			side_icons =  6
 			button_space = len(indexes) * 24 - 4 + 30 # + 9 #shapekey row adds 30ish, Extra bottom row as padding adds 9ish.
 			side_space = side_icons * 20 + 4	# This may be incorrect if side_icons is less than 4
@@ -490,15 +490,15 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 			if space > 0:
 				side_col = side_col.column()
 				side_col.scale_y = space / 6.0
-				side_col.separator()			
+				side_col.separator()
 			side_col =  col.column(align=True)
 			side_col.operator("object.vertex_groups_move_in_label", icon = 'TRIA_UP', text = "").direction = 'UP'
 			side_col.operator("object.vertex_groups_move_in_label", icon = 'TRIA_DOWN', text = "").direction = 'DOWN'
-			
+
 			##########################
 			# THE REST OF THE DEFAULT INTERFACE
 			# (Minus the name field, which I removed)
-			
+
 			# row = layout.row()
 			if ob.vertex_groups and (ob.mode == 'EDIT' or (ob.mode == 'WEIGHT_PAINT' and ob.type == 'MESH' and ob.data.use_paint_mask_vertex)):
 				row = layout.row()
@@ -524,11 +524,11 @@ def register():
 	bpy.types.Object.vertex_group_labels = bpy.props.CollectionProperty(type = IndexCollection)
 	bpy.types.Object.selected_vertex_group = bpy.props.CollectionProperty(type = IndexProperty)
 	bpy.types.Object.active_vertex_group_label_index = bpy.props.IntProperty( default = 0)
-	
+
 	# Replace shapekeys panel with my own
 	global old_vertex_group_menu
 	old_vertex_group_menu = bpy.types.DATA_PT_vertex_groups
-	
+
 	bpy.types.Scene.vertex_group_view_mode = bpy.props.EnumProperty(
 		name="View",
 		items =	(('ALL', "All", "View All Vertex Groups"),
@@ -548,13 +548,13 @@ def register():
 def unregister():
 	# bpy.utils.unregister_module(__name__)
 	bpy.utils.register_class(old_vertex_group_menu)
-	
+
 	del bpy.types.Scene.vertex_group_view_mode
-	
-	# Should I delete the rna types created?  Hmmmm.  
+
+	# Should I delete the rna types created?  Hmmmm.
 	# I don't want a user to lose data from reloading my addon,
 	# but I also don't want extra data saved if it's permanently disabled.
 	# I think the lesser evil here is not to delete data.
-	
+
 if __name__ == "__main__":
 	register()

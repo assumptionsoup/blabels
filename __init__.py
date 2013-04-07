@@ -23,7 +23,7 @@ else:
 	from . import advanced_labels
 	from . import advanced_shape_key_panel
 	from . import advanced_vertex_group_panel
-	
+
 import bpy
 
 def register():
@@ -34,17 +34,17 @@ def register():
 	# Register panel(s)
 	advanced_shape_key_panel.register()
 	advanced_vertex_group_panel.register()
-	
+
 	bpy.utils.register_module(__name__)
-	
+
 def unregister():
 	bpy.utils.unregister_module(__name__)
-	
+
 	# IndexProperty and IndexCollection are part of this module, so they
 	# are already unregistered in unregister_module.  They only needed to
 	# be registered explicitly, because they needed to be registered before
 	# specific panels.
-	
+
 	advanced_vertex_group_panel.unregister()
 	advanced_shape_key_panel.unregister()
 

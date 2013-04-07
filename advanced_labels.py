@@ -24,7 +24,7 @@ def strip_label_number(label):
 	name = label.name
 	name = name.split("(")[0]
 	return name.strip()
-	
+
 def format_label_name(label, num_items = None):
 	''' Updates the label name with the number of items in the label if no
 	overriding number is given. '''
@@ -39,40 +39,40 @@ class Advanced_Labels( object ):
 			self.context = bpy.context
 		else:
 			self.context = context # ?? save context?  or have everything pass it around?
-		
+
 		# shape_key_labels = bpy.props.CollectionProperty(type = IndexCollection)
 		# selected_shape_keys = bpy.props.CollectionProperty(type = IndexProperty)
 		# active_shape_key_label_index = bpy.props.IntProperty( default = 0, update = label_index_updated)
-	
+
 	# Override these, or use the ones in init?
 	# Since I once noted that saving the object to a class variable is a bad idea,
 	# I'm leaning towards these.
-	
+
 	@property
 	def labels( self ):
 		raise NotImplementedError
-	
+
 	@property
 	def selected_items( self ):
 		raise NotImplementedError
-	
+
 	@property
 	def active_index( self ):
 		raise NotImplementedError
-	
+
 	@active_index.setter
 	def active_index( self, index ):
 		# May need a setter since it's not passing a complex object type (eg, might accidentally pass 23 instead of the prop reference)
 		raise NotImplementedError
-	
+
 	@property
 	def active_item_index( self ):
 		raise NotImplementedError
-	
+
 	@active_item_index.setter
 	def active_item_index( sel, index ):
 		raise NotImplementedError
-	
+
 	@property
 	def items( self ):
 		raise NotImplementedError
@@ -84,19 +84,19 @@ class Advanced_Labels( object ):
 	@view_mode.setter
 	def view_mode( self, mode ):
 		raise NotImplementedError
-	
+
 	def add_item_orig( self, **add_item_kwargs ):
 		# Original call to add item
 		raise NotImplementedError
-	
+
 	def remove_item_orig( self, **remove_item_kwargs ):
 		# Original call to remove item
 		raise NotImplementedError
-	
+
 	def move_item_orig( self, *move_item_kwargs ):
 		# Original call to move item
 		raise NotImplementedError
-		
+
 	# END of functiones that need overrides to work.
 	def add( self ):
 		obj = self.context.object
@@ -114,17 +114,17 @@ class Advanced_Labels( object ):
 
 		index = len( labels.keys() ) - 1
 		self.active_index = index
-	
+
 	def remove( self ):
 		obj = self.context.object
 		labels = self.labels
 		keys = labels.keys()
 		index = self.active_index
-		
+
 		if keys and (index != 0 or len(keys) == 1):
 			labels.remove(index)
 			self.active_index = min(len(keys) - 2, index)
-		
+
 	def move( self, direction = 'up' ):
 		# Gather data
 		obj = self.context.object
@@ -132,7 +132,7 @@ class Advanced_Labels( object ):
 		labels = self.labels
 		keys = labels.keys()
 		index = self.active_index
-		
+
 		# Check for labels.  Don't move special label "ALL".
 		if keys and index > 0:
 			if direction.lower() == 'up':
@@ -143,11 +143,11 @@ class Advanced_Labels( object ):
 				if index + 1 < len(keys):
 					labels.move(index, index + 1)
 					self.active_index = index + 1
-	
+
 	def select_item( self, index, add = False ):
 		if index > -1:
 			sel = self.selected_items
-			
+
 			if not add:
 				# Clear selected if shift isn't used
 				for x in range(len(sel)):
@@ -164,23 +164,23 @@ class Advanced_Labels( object ):
 						else:
 							sel.remove(x)
 						return
-			
+
 			# Set active
 			self.active_item_index = index
-			
+
 			# Add to selected
 			i = sel.add()
 			i.index = index
-	
-	# Item related - Might move these to a different class.		
-	
+
+	# Item related - Might move these to a different class.
+
 	def get_visible_selection( self, indexes ):
 		# Get selected
 		selected = [i.index for i in self.selected_items]
 		if not selected:
 			selected = [self.active_item_index]
 		selected = set(selected)
-		
+
 		return [i for i in indexes if i in selected]
 
 	def get_visible_item_indexes( self, skip_view_mode_filter = False ):
@@ -189,19 +189,19 @@ class Advanced_Labels( object ):
 		items = self.items
 		index = self.active_index
 		indexes = []
-		
+
 		if index != 0 and labels and len(labels):
 			# Invalid State Check (only fixes out of range states)
 			item_indexes = labels[index].indexes
 			for x in reversed(range(len(item_indexes))):
 				if item_indexes[x].index >= len(items):
 					item_indexes.remove(x)
-			
+
 			# Find indexes in label
 			indexes = [i.index for i in item_indexes if i.index > -1]
 		else:
 			indexes = [i for i in range(len(items))]
-		
+
 		selected = []
 		if indexes:
 			selected = self.get_visible_selection(indexes)
@@ -225,12 +225,12 @@ class Advanced_Labels( object ):
 				else:
 					indexes, selected = self.filter_view_mode( indexes, selected )
 		return indexes, selected
-	
+
 	def copy_item( self, label_index ):
 		''' Copies selected items to the given label index.
 		Returns True if an item was added. '''
 		label = self.labels[label_index]
-		
+
 		# Get indexes
 		item_indexes = [i.index for i in label.indexes]
 		selected = self.get_visible_item_indexes()[1]
@@ -242,51 +242,51 @@ class Advanced_Labels( object ):
 				added_indexes = True
 				indexes = label.indexes.add()
 				indexes.index = i
-		
+
 		if added_indexes:
 			format_label_name(label)
-		
+
 		if added_indexes:
 			return strip_label_number(label)
 		return None
-		
+
 	def add_item( self, **add_items_kwargs ):
 		index = self.active_index
 		labels =  self.labels
-		
+
 		self.add_item_orig( **add_items_kwargs )
-		
+
 		# Add to current label if on is selected.
 		if index > 0:
 			label = labels[index]
 			label_index = label.indexes.add()
 			label_index.index = self.active_item_index
 			format_label_name(label)
-		
+
 		# Update "All" Label
 		if labels:
 			num_items = len(self.items)
 			format_label_name(labels[0], num_items)
-		
+
 		# Update selected
 		selected_items = self.selected_items
 		for x in range(len(selected_items)):
 			selected_items.remove(0)
 		selected_index = selected_items.add()
 		selected_index.index = self.active_item_index
-	
+
 	def remove_item_index_from_label( self, index, label ):
 		for x, i in enumerate(label.indexes):
 			if index == i.index:
 				label.indexes.remove(x)
 				format_label_name( label )
 				break
-	
+
 	def remove_item( self ):
 		index = self.active_index
 		if index > 0:
-			label = self.labels[index]			
-			
+			label = self.labels[index]
+
 			# get selected
 			sel = self.get_visible_item_indexes( )[1]
 			sel.sort()
@@ -298,24 +298,24 @@ class Advanced_Labels( object ):
 		labels = self.labels
 		item_index = self.active_item_index
 		self.remove_item_orig()
-		
+
 		if labels:
 			# Update "All" Label
 			num_keys = len(self.items)
 			format_label_name( labels[0], num_keys)
-			
+
 			# Update other labels
 			if len(labels) > 1:
 				for x in range(1, len(labels)):
 					self.remove_item_index_from_label(item_index, labels[x])
-				
+
 				# Correct the moved index in every label (except the first label, All)
 				for x in range(1, len(labels)):
 					label_indexes = labels[x].indexes
 					for label_index in label_indexes:
 						if label_index.index >= item_index:
 							label_index.index -= 1
-	
+
 	def delete_item( self ):
 		# Delete selected
 		sel = self.get_visible_item_indexes( )[1]
@@ -325,38 +325,38 @@ class Advanced_Labels( object ):
 			for i in sel:
 				self.active_item_index = i
 				self._delete_active_item( )
-			
+
 			# Update active index
 			active_index = self.active_item_index
 			if len(self.items) > active_index + 1:
 				self.active_item_index = active_index + 1
-			
+
 			# Update selected
 			selected_items = self.selected_items
 			for sel in selected_items:
 				selected_items.remove(0)
 			s = selected_items.add()
 			s.index = self.active_item_index
-	
+
 	def move_item( self, direction = 'up' ): #move_in_label(self):
 		label_index = self.active_index
 		labels = self.labels
-		
+
 		# Get indexes of visible keys
 		indexes, sel = self.get_visible_item_indexes()
-		
+
 		# If it's a real label
 		if label_index > 0:
 			# I'm sure there's a better way to do this.
-			
+
 			# Do everything in reverse if going down
 			if direction.lower() != 'up':
 				indexes.reverse()
-			
+
 			# Indexes of selected keys
 			pos = [indexes.index(i) for i in sel]
 			pos.sort()
-			
+
 			# Indexes are in order, beginning at 0, and therefore at the start of the list
 			# and can be skipped
 			if pos == list(range(len(pos))):
@@ -367,9 +367,9 @@ class Advanced_Labels( object ):
 			while pos and pos[0] == 0:
 				new_indexes.append(indexes.pop(0))
 				pos = [pos[y] - 1 for y in range(1, len(pos))]
-			
+
 			# The main logic I'm using.  I really wish this whole thing was better.
-			delayed = []			
+			delayed = []
 			for x, i in enumerate(indexes):
 				if x + 1 in pos:
 					new_indexes.append(indexes[x + 1])
@@ -381,24 +381,24 @@ class Advanced_Labels( object ):
 							new_indexes.append(d)
 					if i not in new_indexes:
 						new_indexes.append(i)
-			
+
 			# Restore direction
 			if direction.lower() != 'up':
 				new_indexes.reverse()
-			
+
 			# Apply changes
 			for x, i in enumerate(new_indexes):
-				labels[label_index].indexes[x].index = i			
+				labels[label_index].indexes[x].index = i
 		else:
 			# Sort visible
 			sel.sort()
-			
+
 			# Reverse it if going down to help with clashes
 			increment = -1
 			if direction.lower() != 'up':
 				sel.reverse()
 				increment = 1
-			
+
 			item_index = self.active_item_index
 			new_item_index = -1
 			for x, i in enumerate(sel):
@@ -408,18 +408,18 @@ class Advanced_Labels( object ):
 					self.active_item_index = i
 					self.move_item_orig( self, direction = direction.upper() )
 					new_index = self.active_item_index
-					
+
 					# Update actual selection
 					selected_items = self.selected_items
 					selected_items[x].index = new_index
-					
+
 					# Update selected items, so item clashes resolve correctly
 					sel[x] = new_index
-					
+
 					# Save active_index, so it can be restored correctly later
 					if i == item_index:
 						new_item_index = new_index
-					
+
 					# Correct the moved index in every label (except the first label, All)
 					if len(labels) > 1:
 						for y in range(1, len(labels)):
@@ -429,18 +429,18 @@ class Advanced_Labels( object ):
 									label_index.index = new_index
 								elif label_index.index == new_index:
 									label_index.index = i
-			# Restore active_index			
+			# Restore active_index
 			if new_item_index > -1:
 				self.active_item_index = new_item_index
-	
+
 	def toggle_selected_item( self, inverse = False ): #toggle_selected(self):
 		selected_items = self.selected_items
 		actual_indexes, actual_selected = self.get_visible_item_indexes( skip_view_mode_filter = True )
-		
+
 		# Clean selected
 		for x in range(len(selected_items)):
 			selected_items.remove(0)
-		
+
 		if inverse:
 			# Select or de-select all
 			if len(actual_selected) >= 0 and len(actual_selected) != len(actual_indexes):
@@ -454,7 +454,7 @@ class Advanced_Labels( object ):
 				if i not in actual_selected:
 					index = selected_items.add()
 					index.index = i
-		
+
 		# Correct active index.  Correct for 0 selected.
 		selected = [i.index for i in selected_items]
 		if selected:
