@@ -755,6 +755,10 @@ class NullOperator(bpy.types.Operator):
 '''----------------------------------------------------------------------------
                             Shape Key Panel
 ----------------------------------------------------------------------------'''
+class MESH_UL_shape_key_blabels(UI_UL_Blabels):
+    @property
+    def blabels_class(self):
+        return Shape_Key_Blabels
 
 
 class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
@@ -778,7 +782,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
         # LABELS LIST
         layout.label("Labels")
         row = layout.row()
-        row.template_list(ob.data, "shape_key_labels", ob, "active_shape_key_label_index", rows=4)
+        row.template_list("MESH_UL_shape_key_blabels", "shape_key_labels", ob.data, "shape_key_labels", ob, "active_shape_key_label_index", rows=4)
 
         col = row.column()  # .split(percentage=0.5)
         sub = col.column(align=True)

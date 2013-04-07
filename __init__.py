@@ -13,21 +13,18 @@ bl_info = {
     "category": "Rigging"
 }
 
-# To support reload properly, try to access a package var, if it's there, reload everything
-if "bpy" in locals():
-    import imp
-    imp.reload(blabel)
-    imp.reload(shape_key_panel)
-    imp.reload(vertex_group_panel)
-else:
-    from . import blabels
-    from . import shape_key_panel
-    from . import vertex_group_panel
-
 import bpy
+from . import blabels
+from . import shape_key_panel
+from . import vertex_group_panel
 
 
 def register():
+    import imp
+    imp.reload(blabels)
+    imp.reload(shape_key_panel)
+    imp.reload(vertex_group_panel)
+
     # Register collections
     bpy.utils.register_class(blabels.IndexProperty)
     bpy.utils.register_class(blabels.IndexCollection)

@@ -19,23 +19,7 @@ to a ui panel in Blender. '''
 '''
 
 import bpy
-
-
-def strip_label_number(label):
-    # Remove numbers from label name and return it
-    name = label.name
-    name = name.split("(")[0]
-    return name.strip()
-
-
-def format_label_name(label, num_items=None):
-    ''' Updates the label name with the number of items in the label if no
-    overriding number is given. '''
-    name = strip_label_number(label)
-    if num_items is None:
-        num_items = len(label.indexes)
-    label.name = "{:<20}({})".format(name, num_items)
-
+from bpy.types import UIList
 
 class Blabels(object):
     def __init__(self, context=None):
@@ -101,19 +85,42 @@ class Blabels(object):
         # Original call to move item
         raise NotImplementedError
 
-    # END of functiones that need overrides to work.
+    # END of functions that need overrides to work.
+    def get_label_items(self, index=None):
+        if index is None:
+            index = self.active_index
+
+        label = self.labels[index]
+        if index == 0:
+            return self.items
+        else:
+            items = []
+            for i in label.indexes:
+                try:
+                    items.append(self.items[i.index])
+                except IndexError:
+                    continue
+            return items
+
+    def get_num_items(self, index=None):
+        if index is None:
+            index = self.active_index
+
+        label = self.labels[index]
+        if index == 0:
+            return len(self.items)
+        else:
+            return len(label.indexes)
+
     def add(self):
-        labels = self.labels  # mesh.shape_key_labels
+        labels = self.labels
         keys = labels.keys()
         label = labels.add()
 
         if not keys:
             label.name = "All"
-            num_keys = len(self.items)
-            format_label_name(label, num_keys)
         else:
             label.name = "Label %d" % len(keys)
-            format_label_name(label)
 
         index = len(labels.keys()) - 1
         self.active_index = index
@@ -129,7 +136,6 @@ class Blabels(object):
 
     def move(self, direction='up'):
         # Gather data
-        obj = self.context.object
         labels = self.labels
         keys = labels.keys()
         index = self.active_index
@@ -173,8 +179,8 @@ class Blabels(object):
             i = sel.add()
             i.index = index
 
-    # Item related - Might move these to a different class.
 
+    # Item related - Might move these to a different class.
     def get_visible_selection(self, indexes):
         # Get selected
         selected = [i.index for i in self.selected_items]
@@ -245,10 +251,7 @@ class Blabels(object):
                 indexes.index = i
 
         if added_indexes:
-            format_label_name(label)
-
-        if added_indexes:
-            return strip_label_number(label)
+            return label.name
         return None
 
     def add_item(self, **add_items_kwargs):
@@ -262,12 +265,8 @@ class Blabels(object):
             label = labels[index]
             label_index = label.indexes.add()
             label_index.index = self.active_item_index
-            format_label_name(label)
 
         # Update "All" Label
-        if labels:
-            num_items = len(self.items)
-            format_label_name(labels[0], num_items)
 
         # Update selected
         selected_items = self.selected_items
@@ -280,7 +279,6 @@ class Blabels(object):
         for x, i in enumerate(label.indexes):
             if index == i.index:
                 label.indexes.remove(x)
-                format_label_name(label)
                 break
 
     def remove_item(self):
@@ -300,12 +298,9 @@ class Blabels(object):
         item_index = self.active_item_index
         self.remove_item_orig()
 
-        if labels:
-            # Update "All" Label
-            num_keys = len(self.items)
-            format_label_name(labels[0], num_keys)
+        if not labels:
+            return
 
-            # Update other labels
             if len(labels) > 1:
                 for x in range(1, len(labels)):
                     self.remove_item_index_from_label(item_index, labels[x])
@@ -501,6 +496,29 @@ class MeshButtonsPanel():
 
 #Shape_Key_Blabels().copy_item(14)
 # Shape_Key_Blabels().select_item(138)
+
+class UI_UL_Blabels(UIList):
+    @property
+    def blabels_class(self):
+        raise NotImplementedError
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # assert(isinstance(item, bpy.types.VertexGroup)
+        label = self.blabels_class(context).labels[index]
+        num_items = self.blabels_class(context).get_num_items(index)
+        num_items = str(num_items)
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+
+            layout.label(text=label.name, translate=False, icon_value=icon)
+            # icon = 'LOCKED' if vgroup.lock_weight else 'UNLOCKED'
+            # layout.prop(vgroup, "lock_weight", text="", icon=icon, emboss=False)
+
+            layout = layout.split(percentage=0.1)
+            layout.label(text=num_items)
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon_value=icon)
 
 
 class IndexProperty(bpy.types.PropertyGroup):

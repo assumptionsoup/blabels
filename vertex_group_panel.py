@@ -22,7 +22,7 @@ be forthcoming.'''
 '''
 
 import bpy
-from bpy.types import Menu, Panel
+from bpy.types import Menu, Panel, UIList
 from .blabels import *
 
 
@@ -388,6 +388,12 @@ class MESH_MT_vertex_groups_copy_to_label(Menu):
 
 ##################################
 ##     Main UI
+class MESH_UL_vgroup_blabels(UI_UL_Blabels):
+    @property
+    def blabels_class(self):
+        return Vertex_Group_Blables
+
+
 class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
     bl_label = "Vertex Groups"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
@@ -408,7 +414,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
         # LABELS LIST
         layout.label("Labels")
         row = layout.row()
-        row.template_list(ob, "vertex_group_labels", ob, "active_vertex_group_label_index", rows=4)
+        row.template_list("MESH_UL_vgroup_blabels", "", ob, "vertex_group_labels", ob, "active_vertex_group_label_index", rows=4)
 
         col = row.column()
         sub = col.column(align=True)

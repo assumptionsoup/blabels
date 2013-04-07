@@ -1,4 +1,4 @@
-**Blabels** (formerly Advanced Shape Key Panel) adds the ability to sort shape keys and vertex groups into labels in Blender.  It also adds a number of shape-key related functions that I found useful.  It is part of a series of scripts I've written as I've started to learn and use Blender for my personal projects.  Blabels is released under GPL v3.0 and is intended for Blender 2.63.
+**Blabels** (formerly Advanced Shape Key Panel) adds the ability to sort shape keys and vertex groups into labels in Blender.  It also adds a number of shape-key related functions that I found useful.  It is part of a series of scripts I've written as I've started to learn and use Blender for my personal projects.  Blabels is released under GPL v3.0 and is intended for Blender 2.66a.
 
 ***
 
@@ -8,7 +8,7 @@ Blabels replaces the default shape key and vertex group panels.  You can find th
 
 To Install Blabels copy the entire source folder into the blender scripts/addon directory.
 
-On Windows this directory is usually at %userprofile%\AppData\Roaming\Blender Foundation\Blender\2.63\scripts\addons unless it was changed in the user preferences.
+On Windows this directory is usually at %userprofile%\AppData\Roaming\Blender Foundation\Blender\2.66a\scripts\addons unless it was changed in the user preferences.
 
 ***
 
