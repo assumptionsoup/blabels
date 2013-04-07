@@ -138,7 +138,7 @@ def get_active_group():
 
 ################################
 ##    UI classes - thin wrappers for Vertex_Group_Blables
-def label_poll(context, test_shapes=False, test_mode=True):
+def label_poll(context, test_groups=False, test_mode=True):
     # Simple function for most the poll methods in this module
     obj = context.object
     if not (obj and obj.type in {'MESH', 'LATTICE', 'CURVE', 'SURFACE'} and
@@ -148,8 +148,8 @@ def label_poll(context, test_shapes=False, test_mode=True):
     if test_mode and context.mode == 'EDIT_MESH':
         return False
 
-    if test_shapes:
-        return obj.data.shape_keys
+    if test_groups:
+        return bool(Vertex_Group_Blables().items)
 
     return True
 
@@ -219,7 +219,7 @@ class VertexGroupsSetIndex(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return label_poll(context, test_shapes=True, test_mode=False)
+        return label_poll(context, test_groups=True, test_mode=False)
 
     def invoke(self, context, event):
         self.shift = event.shift
@@ -240,7 +240,7 @@ class VertexGroupsCopyToLabel(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return label_poll(context, test_shapes=True)
+        return label_poll(context, test_groups=True)
 
     def execute(self, context):
         copied_to = Vertex_Group_Blables(context).copy_item(self.index)
@@ -288,7 +288,7 @@ class VertexGroupsDelete(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return label_poll(context, test_shapes=True)
+        return label_poll(context, test_groups=True)
 
     def execute(self, context):
         Vertex_Group_Blables(context).delete_item()
@@ -312,7 +312,7 @@ class VertexGroupsMoveInLabel(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return label_poll(context, test_shapes=True, test_mode=False)
+        return label_poll(context, test_groups=True, test_mode=False)
 
     def execute(self, context):
         Vertex_Group_Blables(context).move_item(direction=self.direction)
@@ -329,7 +329,7 @@ class VertexGroupsToggleSelected(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return label_poll(context, test_shapes=True, test_mode=False)
+        return label_poll(context, test_groups=True, test_mode=False)
 
     def invoke(self, context, event):
         self.shift = event.shift
@@ -350,7 +350,7 @@ class VertexGroupsToggleLocked(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return label_poll(context, test_shapes=True, test_mode=False)
+        return label_poll(context, test_groups=True, test_mode=False)
 
     def invoke(self, context, event):
         self.shift = event.shift
