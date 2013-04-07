@@ -1,4 +1,4 @@
-''' Advanced_Label class which can be inherited from to quickly extend labels
+''' Blabels class which can be inherited from to quickly extend labels
 to a ui panel in Blender. '''
 '''
 *******************************************************************************
@@ -33,7 +33,7 @@ def format_label_name(label, num_items = None):
 		num_items = len(label.indexes)
 	label.name = "{:<20}({})".format(name, num_items)
 
-class Advanced_Labels( object ):
+class Blabels( object ):
 	def __init__(self, context = None):
 		if context is None:
 			self.context = bpy.context
@@ -469,7 +469,7 @@ class Advanced_Labels( object ):
 		if self.labels and self.view_mode == 'UNLABELED' and self.active_index != 0:
 			self.view_mode = 'ALL'
 
-# Taken from blender ui files.  Needed when Advanced_Lables is eventaully put into a UI class.
+# Taken from blender ui files.  Needed when Blabels is eventaully put into a UI class.
 class MeshButtonsPanel():
 	bl_space_type = 'PROPERTIES'
 	bl_region_type = 'WINDOW'
@@ -481,24 +481,24 @@ class MeshButtonsPanel():
 		return context.mesh and (engine in cls.COMPAT_ENGINES)
 
 
-# Advanced_Shape_Key_Labels().add()
-# Advanced_Shape_Key_Labels().remove()
-# Advanced_Shape_Key_Labels().add()
-# Advanced_Shape_Key_Labels().move('up')
-# Advanced_Shape_Key_Labels().move('up')
-# Advanced_Shape_Key_Labels().move('up')
-# Advanced_Shape_Key_Labels().move('down')
-# Advanced_Shape_Key_Labels().move('down')
-# Advanced_Shape_Key_Labels().add_item()
-# Advanced_Shape_Key_Labels().add_item()
-# Advanced_Shape_Key_Labels().add_item()
-# Advanced_Shape_Key_Labels().delete_item()
-# Advanced_Shape_Key_Labels().move_item('up')
-# Advanced_Shape_Key_Labels().move_item('up')
-# Advanced_Shape_Key_Labels().move_item('down')
+# Shape_Key_Blabels().add()
+# Shape_Key_Blabels().remove()
+# Shape_Key_Blabels().add()
+# Shape_Key_Blabels().move('up')
+# Shape_Key_Blabels().move('up')
+# Shape_Key_Blabels().move('up')
+# Shape_Key_Blabels().move('down')
+# Shape_Key_Blabels().move('down')
+# Shape_Key_Blabels().add_item()
+# Shape_Key_Blabels().add_item()
+# Shape_Key_Blabels().add_item()
+# Shape_Key_Blabels().delete_item()
+# Shape_Key_Blabels().move_item('up')
+# Shape_Key_Blabels().move_item('up')
+# Shape_Key_Blabels().move_item('down')
 
-#Advanced_Shape_Key_Labels().copy_item(14)
-# Advanced_Shape_Key_Labels().select_item(138)
+#Shape_Key_Blabels().copy_item(14)
+# Shape_Key_Blabels().select_item(138)
 
 
 class IndexProperty(bpy.types.PropertyGroup):
@@ -523,7 +523,7 @@ class IndexCollection(bpy.types.PropertyGroup):
 		# )
 
 # def label_index_updated( self, context ):
-	# Advanced_Labels( context ).label_index_updated()
+	# Blabels( context ).label_index_updated()
 
 # bpy.utils.register_class(IndexProperty)
 # bpy.utils.register_class(IndexCollection)

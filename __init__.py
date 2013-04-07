@@ -1,5 +1,5 @@
 bl_info = {
-    "name": "Advanced Panels",
+    "name": "B-Labels",
     "author": "Jordan Hueckstaedt",
     "version": (1, 2),
     "blender": (2, 63, 0),
@@ -16,24 +16,24 @@ bl_info = {
 # To support reload properly, try to access a package var, if it's there, reload everything
 if "bpy" in locals():
 	import imp
-	imp.reload(advanced_labels)
-	imp.reload(advanced_shape_key_panel)
-	imp.reload(advanced_vertex_group_panel)
+	imp.reload(blabel)
+	imp.reload(shape_key_panel)
+	imp.reload(vertex_group_panel)
 else:
-	from . import advanced_labels
-	from . import advanced_shape_key_panel
-	from . import advanced_vertex_group_panel
+	from . import blabels
+	from . import shape_key_panel
+	from . import vertex_group_panel
 
 import bpy
 
 def register():
 	# Register collections
-	bpy.utils.register_class(advanced_labels.IndexProperty)
-	bpy.utils.register_class(advanced_labels.IndexCollection)
+	bpy.utils.register_class(blabels.IndexProperty)
+	bpy.utils.register_class(blabels.IndexCollection)
 
 	# Register panel(s)
-	advanced_shape_key_panel.register()
-	advanced_vertex_group_panel.register()
+	shape_key_panel.register()
+	vertex_group_panel.register()
 
 	bpy.utils.register_module(__name__)
 
@@ -45,8 +45,8 @@ def unregister():
 	# be registered explicitly, because they needed to be registered before
 	# specific panels.
 
-	advanced_vertex_group_panel.unregister()
-	advanced_shape_key_panel.unregister()
+	vertex_group_panel.unregister()
+	shape_key_panel.unregister()
 
 
 if __name__ == "__main__":

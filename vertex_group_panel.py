@@ -1,4 +1,4 @@
-''' Replaces the default vertex group panel with an "Advanced" one.
+''' Replaces the default vertex group panel with a Blabels panel.
 
 Adds the ability to sort vertex groups by labels.  Additional features may
 be forthcoming.'''
@@ -23,9 +23,9 @@ be forthcoming.'''
 
 import bpy
 from bpy.types import Menu, Panel
-from .advanced_labels import *
+from .blabels import *
 
-class Advanced_Vertex_Group_Labels( Advanced_Labels):
+class Vertex_Group_Blables(Blabels):
 	@property
 	def labels( self ):
 		return self.context.object.vertex_group_labels
@@ -125,16 +125,16 @@ class Advanced_Vertex_Group_Labels( Advanced_Labels):
 
 
 def get_selected_groups():
-	''' Easy access wrapper for Advanced_Vertex_Group_Labels '''
-	items = Advanced_Vertex_Group_Labels().selected_items
+	''' Easy access wrapper for Vertex_Group_Blables '''
+	items = Vertex_Group_Blables().selected_items
 	return [i.index for i in items]
 
 def get_active_group():
-	''' Easy access wrapper for Advanced_Vertex_Group_Labels '''
-	return Advanced_Vertex_Group_Labels().active_item_index
+	''' Easy access wrapper for Vertex_Group_Blables '''
+	return Vertex_Group_Blables().active_item_index
 
 ################################
-##	UI Classes - thin wrappers for Advanced_Vertex_Group_Labels
+##	UI Classes - thin wrappers for Vertex_Group_Blables
 def label_poll(context, test_shapes = False, test_mode = True):
 	# Simple function for most the poll methods in this module
 	obj = context.object
@@ -161,7 +161,7 @@ class VertexGroupsLabelAdd(bpy.types.Operator):
 		return label_poll(context, test_mode = False)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).add( )
+		Vertex_Group_Blables( context ).add( )
 		return {'FINISHED'}
 
 class VertexGroupsLabelRemove(bpy.types.Operator):
@@ -175,7 +175,7 @@ class VertexGroupsLabelRemove(bpy.types.Operator):
 		return label_poll(context, test_mode = False)
 
 	def execute(self, context):
-		copied_to = Advanced_Vertex_Group_Labels( context ).remove( )
+		copied_to = Vertex_Group_Blables( context ).remove( )
 		return {'FINISHED'}
 
 class VertexGroupsLabelMove(bpy.types.Operator):
@@ -197,7 +197,7 @@ class VertexGroupsLabelMove(bpy.types.Operator):
 		return label_poll(context, test_mode = False)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).move( direction = self.direction )
+		Vertex_Group_Blables( context ).move( direction = self.direction )
 		return {'FINISHED'}
 
 class VertexGroupsSetIndex(bpy.types.Operator):
@@ -218,7 +218,7 @@ class VertexGroupsSetIndex(bpy.types.Operator):
 		return self.execute(context)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).select_item( self.index, self.shift )
+		Vertex_Group_Blables( context ).select_item( self.index, self.shift )
 		return {'FINISHED'}
 
 class VertexGroupsCopyToLabel(bpy.types.Operator):
@@ -234,7 +234,7 @@ class VertexGroupsCopyToLabel(bpy.types.Operator):
 		return label_poll(context, test_shapes = True)
 
 	def execute(self, context):
-		copied_to = Advanced_Vertex_Group_Labels( context ).copy_item( self.index )
+		copied_to = Vertex_Group_Blables( context ).copy_item( self.index )
 		if copied_to is not None:
 			self.report({'INFO'}, "Copied to %s" % copied_to)
 		return {'FINISHED'}
@@ -250,7 +250,7 @@ class VertexGroupsAddToLabel(bpy.types.Operator):
 		return label_poll(context)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).add_item( )
+		Vertex_Group_Blables( context ).add_item( )
 		return {'FINISHED'}
 
 class VertexGroupsRemoveFromLabel(bpy.types.Operator):
@@ -265,7 +265,7 @@ class VertexGroupsRemoveFromLabel(bpy.types.Operator):
 		return label_poll(context, test_mode = False)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).remove_item( )
+		Vertex_Group_Blables( context ).remove_item( )
 		return {'FINISHED'}
 
 class VertexGroupsDelete(bpy.types.Operator):
@@ -279,7 +279,7 @@ class VertexGroupsDelete(bpy.types.Operator):
 		return label_poll(context, test_shapes = True)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).delete_item( )
+		Vertex_Group_Blables( context ).delete_item( )
 		return {'FINISHED'}
 
 class VertexGroupsMoveInLabel(bpy.types.Operator):
@@ -301,7 +301,7 @@ class VertexGroupsMoveInLabel(bpy.types.Operator):
 		return label_poll(context, test_shapes = True, test_mode = False)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).move_item( direction = self.direction )
+		Vertex_Group_Blables( context ).move_item( direction = self.direction )
 		return {'FINISHED'}
 
 class VertexGroupsToggleSelected(bpy.types.Operator):
@@ -321,7 +321,7 @@ class VertexGroupsToggleSelected(bpy.types.Operator):
 		return self.execute(context)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).toggle_selected_item( inverse = not self.shift )
+		Vertex_Group_Blables( context ).toggle_selected_item( inverse = not self.shift )
 		return {'FINISHED'}
 
 class VertexGroupsToggleLocked(bpy.types.Operator):
@@ -341,7 +341,7 @@ class VertexGroupsToggleLocked(bpy.types.Operator):
 		return self.execute(context)
 
 	def execute(self, context):
-		Advanced_Vertex_Group_Labels( context ).toggle_locked_item( inverse = not self.shift )
+		Vertex_Group_Blables( context ).toggle_locked_item( inverse = not self.shift )
 		return {'FINISHED'}
 
 class MESH_MT_vertex_group_view_mode(Menu):
@@ -423,7 +423,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 		side_col.operator("object.vertex_groups_delete", icon = 'PANEL_CLOSE', text = "")
 
 		side_col.menu("MESH_MT_vertex_group_specials", icon = 'DOWNARROW_HLT', text = "")
-		indexes, selected = Advanced_Vertex_Group_Labels( context ).get_visible_item_indexes()
+		indexes, selected = Vertex_Group_Blables( context ).get_visible_item_indexes()
 
 		if len(ob.vertex_groups):
 			row = box.row()
@@ -516,7 +516,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 ##################################
 ##	 Register UI
 def label_index_updated(self, context):
-	Advanced_Vertex_Group_Labels( context ).label_index_updated()
+	Vertex_Group_Blables( context ).label_index_updated()
 
 old_vertex_group_menu = None
 def register():
