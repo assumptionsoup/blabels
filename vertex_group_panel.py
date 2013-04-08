@@ -414,7 +414,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
         # LABELS LIST
         layout.label("Labels")
         row = layout.row()
-        row.template_list("MESH_UL_vgroup_blabels", "", ob, "vertex_group_labels", ob, "active_vertex_group_label_index", rows=4)
+        row.template_list("MESH_UL_vgroup_blabels", "", ob, "vertex_group_labels", ob, "active_vertex_group_label_index", rows=5)
 
         col = row.column()
         sub = col.column(align=True)
@@ -431,10 +431,10 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
         sub.operator("object.vertex_groups_label_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
 
 
-        labels = ob.vertex_group_labels
+        labels = Vertex_Group_Blables(context).labels
         if labels:
             row = layout.row()
-            row.prop(labels[ob.active_vertex_group_label_index], 'name')
+            row.prop(Vertex_Group_Blables(context).active_label, 'name')
 
         ##########################
         # SIDE COLUMN ICONS
@@ -452,7 +452,6 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 
         if len(ob.vertex_groups):
             row = box.row()
-
             ##########################
             # VIEW MODE / COPY TO
             # Display view mode menu if "ALL" label is selected

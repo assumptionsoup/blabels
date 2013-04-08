@@ -38,31 +38,38 @@ class Blabels(object):
 
     @property
     def labels(self):
+        '''All labels'''
         raise NotImplementedError
 
     @property
     def selected_items(self):
+        '''Selected items in the active label'''
         raise NotImplementedError
 
     @property
     def active_index(self):
+        '''Active label index getter'''
         raise NotImplementedError
 
     @active_index.setter
     def active_index(self, index):
+        '''Active label index setter'''
         # May need a setter since it's not passing a complex object type (eg, might accidentally pass 23 instead of the prop reference)
         raise NotImplementedError
 
     @property
     def active_item_index(self):
+        '''Active item index'''
         raise NotImplementedError
 
     @active_item_index.setter
     def active_item_index(sel, index):
+        '''Active item index setter'''
         raise NotImplementedError
 
     @property
     def items(self):
+        '''All items in all labels'''
         raise NotImplementedError
 
     @property
@@ -86,6 +93,14 @@ class Blabels(object):
         raise NotImplementedError
 
     # END of functions that need overrides to work.
+    @property
+    def active_item(self):
+        return self.items[self.active_item_index]
+
+    @property
+    def active_label(self):
+        return self.labels[self.active_index]
+
     def get_label_items(self, index=None):
         if index is None:
             index = self.active_index
@@ -503,22 +518,17 @@ class UI_UL_Blabels(UIList):
         raise NotImplementedError
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        # assert(isinstance(item, bpy.types.VertexGroup)
         label = self.blabels_class(context).labels[index]
         num_items = self.blabels_class(context).get_num_items(index)
         num_items = str(num_items)
 
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-
-            layout.label(text=label.name, translate=False, icon_value=icon)
-            # icon = 'LOCKED' if vgroup.lock_weight else 'UNLOCKED'
-            # layout.prop(vgroup, "lock_weight", text="", icon=icon, emboss=False)
-
-            layout = layout.split(percentage=0.1)
-            layout.label(text=num_items)
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.label(text="", icon_value=icon)
+        layout = layout.split(percentage=0.9)
+        layout.label(text=label.name, translate=False, icon_value=icon)
+        layout.label(text=num_items)
+        # if self.layout_type in {'DEFAULT', 'COMPACT'}:
+        # elif self.layout_type in {'GRID'}:
+            # layout.alignment = 'CENTER'
+            # layout.label(text="", icon_value=icon)
 
 
 class IndexProperty(bpy.types.PropertyGroup):
