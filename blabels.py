@@ -336,12 +336,6 @@ class Blabels(object):
         self._selected_item_indexes = selected
         return indexes, selected
 
-    def get_visible_items(self):
-        all_indexes, selected_indexes = self.get_visible_item_indexes()
-        all_items = [self.items[i] for i in all_indexes]
-        selected_items = [self.items[i] for i in selected_indexes]
-        return all_items, selected_items
-
     @property
     def visible_item_indexes(self):
         try:
@@ -1142,7 +1136,8 @@ class BlabelLabelList(BaseBlabelList):
 class BlabelItemList(BaseBlabelList):
     def __init__(self, context, layout, blabel, operators, name):
         super().__init__(context, layout, blabel, operators, name)
-        self.items, self.selected = self.blabel.get_visible_items()
+        self.items = self.blabel.visible_items
+        self.selected = self.blabel.selected_items
 
     def _pre_draw_items(self):
         super()._pre_draw_items()

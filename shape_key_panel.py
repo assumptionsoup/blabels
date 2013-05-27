@@ -496,7 +496,7 @@ def copy_into(context=None):
 
     label_accessor = Shape_Key_Blabels(context)
     active_item = label_accessor.active_item
-    selected = label_accessor.get_visible_items()[-1]
+    selected = label_accessor.selected_items
 
     if active_item in selected:
         selected.remove(active_item)
